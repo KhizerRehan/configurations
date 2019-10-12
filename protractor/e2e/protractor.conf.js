@@ -44,7 +44,14 @@ exports.config = {
 		jasmine.getEnv().addReporter(
 			new SpecReporter({
 				spec: {
-					displayStacktrace: true
+					displayPending: true,   // display each pending spec
+					displayDuration: true,  // display each spec duration
+				},
+				summary: {
+					displaySuccesses: true, // display summary of all successes after execution
+					displayStacktrace: false, // display stackTrace of all failed specs after execution
+					displayFailed: true,    // display summary of all failures after execution
+					displayPending: true,   // display summary of all pending specs after execution
 				}
 			})
 		);
