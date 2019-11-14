@@ -1,0 +1,120 @@
+Index: src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-3/basic-setup-wizard-step-3.component.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';\nimport { from, Subject } from 'rxjs';\nimport { switchMap, take, takeUntil } from 'rxjs/operators';\nimport { EndpointsService } from '../../../../../../../core/services/endpoints';\nimport { FacilitiesService } from '../../../../../../../core/services/facilities.service';\nimport { HttpApiService } from '../../../../../../../core/services/http-api.service';\nimport { RequestBuilder } from '../../../../../../../core/services/request.builder';\nimport { ResponseCode } from '../../../../../../../core/services/ResponseCode';\nimport { SharedDataService } from '../../../../../../../core/services/shared-data.service';\nimport { TransactionService } from '../../../../../../../core/services/transaction.service';\nimport { ConfirmModal } from '../../../../../modals/confrim-modal/confirm-modal.component';\nimport { NavigateDirection } from '../../../types/navigate-direction.enum';\nimport { DEFAULT_SMS_PROVIDER_NAME } from '../../basic-setup-wizard-constants';\n\n@Component({\n  selector: 'app-basic-setup-wizard-step-3',\n  templateUrl: './basic-setup-wizard-step-3.component.html'\n})\nexport class BasicSetupWizardStep3Component implements OnInit, OnDestroy {\n  readonly defaultSmsProvider = DEFAULT_SMS_PROVIDER_NAME;\n\n  @Output() navigate: EventEmitter<NavigateDirection> = new EventEmitter<NavigateDirection>();\n  @Input() setupData: any;\n\n  url: string;\n  errorMessage: any;\n  validationError: any;\n  private destroyed$ = new Subject();\n\n  constructor(private Transaction: TransactionService,\n              private Api: HttpApiService,\n              private sharedData: SharedDataService,\n              private facilitiesService: FacilitiesService,\n              private endpoints: EndpointsService) {\n  }\n\n  ngOnInit() {\n    this.setupData.smsProvider = this.setupData.smsProvider ? this.setupData.smsProvider : {\n      isCreated: false,\n      path: `${this.endpoints.getFacilitiesSmsProvidersUrl()}{${this.defaultSmsProvider}}`\n    };\n\n    // check If smsProvider is already been created:\n    this.checkIsSmsProviderCreated();\n  }\n\n  ngOnDestroy(): void {\n    this.destroyed$.next();\n    this.destroyed$.complete();\n  }\n\n  onNext() {\n    if (this.sharedData.getChangeCount() === 0) {\n      this.navigate.emit(NavigateDirection.NEXT);\n    }\n    else {\n      from(this.Transaction.getWriteTransaction())\n        .pipe(\n          take(1),\n          switchMap((transactionId) => this.Api.postRequest(RequestBuilder.withValidateTransaction(transactionId)))\n        )\n        .pipe(\n          takeUntil(this.destroyed$)\n        )\n        .subscribe(validateResponse => {\n            if (validateResponse.code === ResponseCode.OK) {\n              this.navigate.emit(NavigateDirection.NEXT);\n            }\n            else {\n              this.validationError = validateResponse.data.errors[0];\n            }\n          },\n          error => console.log(error));\n    }\n  }\n\n  onBack() {\n    this.navigate.emit(NavigateDirection.BACK);\n  }\n\n  checkIsSmsProviderCreated() {\n    from(this.Transaction.getWriteTransaction())\n      .pipe(\n        take(1),\n        switchMap((transactionId) => this.Api.postRequest(RequestBuilder.withExists(this.setupData.smsProvider.path, transactionId)))\n      )\n      .pipe(\n        takeUntil(this.destroyed$)\n      )\n      .subscribe(response => {\n          this.setupData.smsProvider.isCreated = response.code === ResponseCode.OK && response.data.value;\n        },\n        err => console.log(err));\n  }\n\n  createSmsProvider() {\n    this.Transaction.getWriteTransaction()\n      .then(transactionId => {\n        this.Api.postRequest(RequestBuilder.withCreate(this.setupData.smsProvider.path, transactionId))\n          .pipe(\n            take(1)\n          )\n          .subscribe(response => {\n              if (response.code === ResponseCode.OK) {\n                this.setupData.smsProvider.isCreated = true;\n                this.sharedData.incrementChangeCount(this.setupData.smsProvider.path);\n                this.editSmsProvider();\n              }\n            },\n            error1 => console.log(error1));\n      })\n      .catch(error => {\n      });\n  }\n\n  editSmsProvider() {\n    this.facilitiesService.editFacilities('smsProviders', this.defaultSmsProvider);\n  }\n\n  deleteSmsProvider() {\n    if (this.setupData.smsProvider.isCreated) {\n      ConfirmModal.open(\n        'Delete SMS Provider',\n        'Are you sure you want to delete the sms provider?',\n        'deleteSmsProviderConfirmed',\n        this\n      );\n    }\n  }\n\n  deleteSmsProviderConfirmed() {\n    this.validationError = null;\n    this.errorMessage = null;\n    from(this.Transaction.getWriteTransaction())\n      .pipe(\n        take(1),\n        switchMap((transactionId) => this.Api.postRequest(RequestBuilder.withDelete(this.setupData.smsProvider.path, transactionId)))\n      )\n      .pipe(\n        takeUntil(this.destroyed$)\n      )\n      .subscribe(response => {\n          if (response.code === ResponseCode.OK) {\n            this.setupData.smsProvider.isCreated = false;\n            this.sharedData.incrementChangeCount(this.setupData.smsProvider.path);\n          }\n        },\n        error1 => console.log(error1));\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-3/basic-setup-wizard-step-3.component.ts	(revision 01324fe82b31d23adb41d50687eea2bb4c47668e)
++++ src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-3/basic-setup-wizard-step-3.component.ts	(date 1560508967000)
+@@ -4,6 +4,7 @@
+ import { EndpointsService } from '../../../../../../../core/services/endpoints';
+ import { FacilitiesService } from '../../../../../../../core/services/facilities.service';
+ import { HttpApiService } from '../../../../../../../core/services/http-api.service';
++import { PermissionsEvaluatorService } from '../../../../../../../core/services/permissions-evaluator.service';
+ import { RequestBuilder } from '../../../../../../../core/services/request.builder';
+ import { ResponseCode } from '../../../../../../../core/services/ResponseCode';
+ import { SharedDataService } from '../../../../../../../core/services/shared-data.service';
+@@ -21,16 +22,20 @@
+ 
+   @Output() navigate: EventEmitter<NavigateDirection> = new EventEmitter<NavigateDirection>();
+   @Input() setupData: any;
++  @Input() navigateDirection: NavigateDirection;
++
+ 
+   url: string;
+   errorMessage: any;
+   validationError: any;
++  smsProviderPermissions: any = {};
+   private destroyed$ = new Subject();
+ 
+   constructor(private Transaction: TransactionService,
+               private Api: HttpApiService,
+               private sharedData: SharedDataService,
+               private facilitiesService: FacilitiesService,
++              private permissionsService: PermissionsEvaluatorService,
+               private endpoints: EndpointsService) {
+   }
+ 
+@@ -40,6 +45,7 @@
+       path: `${this.endpoints.getFacilitiesSmsProvidersUrl()}{${this.defaultSmsProvider}}`
+     };
+ 
++    this.smsProviderPermissions = this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesSmsProvidersUrl());
+     // check If smsProvider is already been created:
+     this.checkIsSmsProviderCreated();
+   }
+Index: src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-3/basic-setup-wizard-step-3.component.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><div class=\"col col-12\">\n  <h4>SMS Provider</h4>\n</div>\n\n<div class=\"col col-12 mt2\">\n  <p class=\"field-description\">Setup an optional SMS provider that is used to send authentication SMS message.\n    <br>This can be done later via the facilities menu.</p>\n</div>\n\n<div class=\"col col-12 mt2\">\n  <button class=\"button button-small\"\n          [ngClass]=\"setupData.smsProvider.isCreated ? 'button-primary-outline' : 'button-success-outline'\"\n          (click)=\"setupData.smsProvider.isCreated ? editSmsProvider() : createSmsProvider()\">\n    {{setupData.smsProvider.isCreated ? 'Edit SMS Provider' : 'Create SMS Provider'}}\n  </button>\n  <button *ngIf=\"setupData.smsProvider.isCreated\"\n          class=\"button button-small button-danger-outline ml2\"\n          (click)=\"deleteSmsProvider()\">\n    Delete SMS Provider\n  </button>\n</div>\n\n<div class=\"col col-12 mt2\">\n  <element-error [error]=\"errorMessage\"></element-error>\n</div>\n\n<div class=\"col col-12 mt2\" *ngIf=\"validationError\">\n  <div class=\"alert alert-danger\">\n    {{validationError.description}}:\n    <br/>\n    {{validationError.path}}\n  </div>\n</div>\n\n<div class=\"col col-12 mt2\">\n  <button type=\"button\" class=\"button button-small button-success right\"\n          (click)=\"onNext()\">Next\n  </button>\n  <button type=\"button\" class=\"button button-small button-primary right mr2\" (click)=\"onBack()\">Back\n  </button>\n</div>\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-3/basic-setup-wizard-step-3.component.html	(revision 01324fe82b31d23adb41d50687eea2bb4c47668e)
++++ src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-3/basic-setup-wizard-step-3.component.html	(date 1560508883000)
+@@ -7,7 +7,7 @@
+     <br>This can be done later via the facilities menu.</p>
+ </div>
+ 
+-<div class="col col-12 mt2">
++<div *ngIf="smsProviderPermissions.canCreate" class="col col-12 mt2">
+   <button class="button button-small"
+           [ngClass]="setupData.smsProvider.isCreated ? 'button-primary-outline' : 'button-success-outline'"
+           (click)="setupData.smsProvider.isCreated ? editSmsProvider() : createSmsProvider()">
+Index: src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-2/basic-setup-wizard-step-2.component.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';\nimport { from, Subject } from 'rxjs';\nimport { switchMap, take, takeUntil } from 'rxjs/operators';\nimport { EndpointsService } from '../../../../../../../core/services/endpoints';\nimport { FacilitiesService } from '../../../../../../../core/services/facilities.service';\nimport { HttpApiService } from '../../../../../../../core/services/http-api.service';\nimport { RequestBuilder } from '../../../../../../../core/services/request.builder';\nimport { ResponseCode } from '../../../../../../../core/services/ResponseCode';\nimport { SharedDataService } from '../../../../../../../core/services/shared-data.service';\nimport { TransactionService } from '../../../../../../../core/services/transaction.service';\nimport { ConfirmModal } from '../../../../../modals/confrim-modal/confirm-modal.component';\nimport { NavigateDirection } from '../../../types/navigate-direction.enum';\nimport { DEFAULT_EMAIL_PROVIDER_NAME } from '../../basic-setup-wizard-constants';\n\n@Component({\n  selector: 'app-basic-setup-wizard-step-2',\n  templateUrl: './basic-setup-wizard-step-2.component.html'\n})\nexport class BasicSetupWizardStep2Component implements OnInit, OnDestroy {\n  readonly defaultEmailProvider = DEFAULT_EMAIL_PROVIDER_NAME;\n\n  @Output() navigate: EventEmitter<NavigateDirection> = new EventEmitter<NavigateDirection>();\n  @Input() setupData: any;\n\n  url: string;\n  validationError: any;\n  errorMessage: any;\n  private destroyed$ = new Subject();\n\n  constructor(private Transaction: TransactionService,\n              private Api: HttpApiService,\n              private sharedData: SharedDataService,\n              private facilitiesService: FacilitiesService,\n              private endpoints: EndpointsService) {\n  }\n\n  ngOnInit() {\n    this.setupData.emailProvider = this.setupData.emailProvider ? this.setupData.emailProvider : {\n      isCreated: false,\n      path: `${this.endpoints.getFacilitiesEmailProvidersUrl()}{${this.defaultEmailProvider}}`\n    };\n\n    // check If emailProvider is already been created:\n    this.checkIsEmailProviderCreated();\n  }\n\n  ngOnDestroy(): void {\n    this.destroyed$.next();\n    this.destroyed$.complete();\n  }\n\n  onNext() {\n\n    if (this.sharedData.getChangeCount() === 0) {\n      this.navigate.emit(NavigateDirection.NEXT);\n    }\n    else {\n\n      from(this.Transaction.getWriteTransaction())\n        .pipe(\n          take(1),\n          switchMap((transactionId) => this.Api.postRequest(RequestBuilder.withValidateTransaction(transactionId))),\n        )\n        .pipe(\n          takeUntil(this.destroyed$)\n        )\n        .subscribe(validateResponse => {\n            if (validateResponse.code === ResponseCode.OK) {\n              this.navigate.emit(NavigateDirection.NEXT);\n            }\n            else {\n              this.validationError = validateResponse.data.errors[0];\n            }\n          },\n          error => console.log(error));\n    }\n\n  }\n\n  onBack() {\n    this.navigate.emit(NavigateDirection.BACK);\n  }\n\n  checkIsEmailProviderCreated() {\n    from(this.Transaction.getWriteTransaction())\n      .pipe(\n        take(1),\n        switchMap((transactionId) => this.Api.postRequest(RequestBuilder.withExists(this.setupData.emailProvider.path, transactionId))),\n      )\n      .pipe(\n        takeUntil(this.destroyed$)\n      )\n      .subscribe(response => {\n          this.setupData.emailProvider.isCreated = response.code === ResponseCode.OK && response.data.value;\n        },\n        err => console.log(err));\n  }\n\n  createEmailProvider() {\n    if (!this.setupData.emailProvider.isCreated) {\n      this.validationError = null;\n      this.errorMessage = null;\n      this.Transaction.getWriteTransaction()\n        .then(transactionId => {\n          this.Api.postRequest(RequestBuilder.withCreate(this.setupData.emailProvider.path, transactionId))\n            .pipe(\n              take(1)\n            ).subscribe(response => {\n              if (response.code === ResponseCode.OK) {\n                this.setupData.emailProvider.isCreated = true;\n                this.sharedData.incrementChangeCount(this.setupData.emailProvider.path);\n                this.editEmailProvider();\n              }\n              else {\n                this.errorMessage = response;\n              }\n            },\n            error1 => console.log(error1));\n        })\n        .catch(error => {\n        });\n    }\n  }\n\n  editEmailProvider() {\n    this.errorMessage = null;\n    this.validationError = null;\n    this.facilitiesService.editFacilities('emailProviders', this.defaultEmailProvider);\n  }\n\n  deleteEmailProvider() {\n    if (this.setupData.emailProvider.isCreated) {\n      ConfirmModal.open(\n        'Delete Email Provider',\n        'Are you sure you want to delete the email provider?',\n        'deleteEmailProviderConfirmed',\n        this\n      );\n    }\n  }\n\n  deleteEmailProviderConfirmed() {\n    this.validationError = null;\n    this.errorMessage = null;\n    from(this.Transaction.getWriteTransaction())\n      .pipe(\n        take(1),\n        switchMap((transactionId) => this.Api.postRequest(RequestBuilder.withDelete(this.setupData.emailProvider.path, transactionId)))\n      )\n      .pipe(\n        take(1)\n      ).subscribe(response => {\n        if (response.code === ResponseCode.OK) {\n          this.setupData.emailProvider.isCreated = false;\n          this.sharedData.incrementChangeCount(this.setupData.emailProvider.path);\n        }\n        else {\n          this.errorMessage = response;\n        }\n      },\n      error1 => console.log(error1));\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-2/basic-setup-wizard-step-2.component.ts	(revision 01324fe82b31d23adb41d50687eea2bb4c47668e)
++++ src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-2/basic-setup-wizard-step-2.component.ts	(date 1560508883000)
+@@ -4,6 +4,7 @@
+ import { EndpointsService } from '../../../../../../../core/services/endpoints';
+ import { FacilitiesService } from '../../../../../../../core/services/facilities.service';
+ import { HttpApiService } from '../../../../../../../core/services/http-api.service';
++import { PermissionsEvaluatorService } from '../../../../../../../core/services/permissions-evaluator.service';
+ import { RequestBuilder } from '../../../../../../../core/services/request.builder';
+ import { ResponseCode } from '../../../../../../../core/services/ResponseCode';
+ import { SharedDataService } from '../../../../../../../core/services/shared-data.service';
+@@ -22,15 +23,18 @@
+   @Output() navigate: EventEmitter<NavigateDirection> = new EventEmitter<NavigateDirection>();
+   @Input() setupData: any;
+ 
++
+   url: string;
+   validationError: any;
+   errorMessage: any;
++  emailProviderPermissions: any = {};
+   private destroyed$ = new Subject();
+ 
+   constructor(private Transaction: TransactionService,
+               private Api: HttpApiService,
+               private sharedData: SharedDataService,
+               private facilitiesService: FacilitiesService,
++              private permissionsService: PermissionsEvaluatorService,
+               private endpoints: EndpointsService) {
+   }
+ 
+@@ -40,6 +44,7 @@
+       path: `${this.endpoints.getFacilitiesEmailProvidersUrl()}{${this.defaultEmailProvider}}`
+     };
+ 
++    this.emailProviderPermissions = this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesEmailProvidersUrl());
+     // check If emailProvider is already been created:
+     this.checkIsEmailProviderCreated();
+   }
+@@ -92,6 +97,11 @@
+       )
+       .subscribe(response => {
+           this.setupData.emailProvider.isCreated = response.code === ResponseCode.OK && response.data.value;
++
++          if(!this.setupData.emailProvider.isCreated && !this.emailProviderPermissions.canCreate) {
++            // Skip Step:
++
++          }
+         },
+         err => console.log(err));
+   }

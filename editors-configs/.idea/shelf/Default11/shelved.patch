@@ -1,0 +1,63 @@
+Index: src/app/oauth/components/claims/edit-claim-modal/edit-claim-modal.component.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { Component, OnDestroy, OnInit } from '@angular/core';\nimport { Subject } from 'rxjs/Subject';\nimport { ConfigService } from '../../../../core/services/config.service';\nimport { EndpointsService } from '../../../../core/services/endpoints';\nimport { HttpApiService } from '../../../../core/services/http-api.service';\nimport { ModalService } from '../../../../core/services/modal.service';\nimport { RequestBuilder } from '../../../../core/services/request.builder';\nimport { ResponseCode } from '../../../../core/services/ResponseCode';\nimport { SharedDataService } from '../../../../core/services/shared-data.service';\nimport { TransactionService } from '../../../../core/services/transaction.service';\n\n@Component({\n  selector: 'app-edit-claim-modal',\n  templateUrl: './edit-claim-modal.component.html'\n})\nexport class EditClaimModalComponent implements OnInit, OnDestroy {\n  readonly destroyed$ = new Subject();\n\n  data: any;\n  url: string;\n  editorId = SharedDataService.generateRandomString();\n  newClaimData: any = {};\n  errorMessage: any;\n  isCreated: boolean;\n  isHidden: boolean = true;\n  isEditorOpen: boolean;\n  isBusyCounter = 0;\n  private editor: any;\n\n  constructor(private Api: HttpApiService,\n              private Transaction: TransactionService,\n              private endpoints: EndpointsService,\n              private sharedData: SharedDataService,\n              private configService: ConfigService,\n              private modalService: ModalService) {\n  }\n\n  ngOnInit() {\n    this.url = this.endpoints.getClaimUrl();\n  }\n\n  ngOnDestroy(): void {\n    this.destroyed$.next(true);\n    this.destroyed$.complete();\n  }\n\n  openModal(data?: any) {\n    this.data = data || {};\n    this.isCreated = data && data.id;\n    this.resetNewClaimData();\n    this.isHidden = false;\n    this.isBusyCounter = 0;\n    // setTimeout(() => {\n    //   this.initEditor();\n    //   this.setProcedureValue(this.data.values['value-transformation-procedure'].value);\n    // }, 100);\n    this.modalService.addOpenedModal('ClaimsTransformationModal', this, 'closeModal');\n    SharedDataService.lockScroll();\n  }\n\n  closeModal() {\n    if (this.editor) {\n      this.editor.destroy();\n    }\n    this.isEditorOpen = false;\n    this.isHidden = true;\n    this.modalService.removeOpenedModal('ClaimsTransformationModal');\n    SharedDataService.unlockScroll();\n  }\n\n  loadData() {\n\n  }\n\n  resetNewClaimData() {\n    this.newClaimData.name = {};\n    this.errorMessage = null;\n  }\n\n  createNewClaim() {\n    this.errorMessage = null;\n    this.newClaimData.name.hasError = false;\n\n    if (!this.newClaimData.name.value) {\n      this.newClaimData.name.hasError = true;\n    }\n    else {\n      this.Transaction.getWriteTransaction()\n        .then(transactionId => {\n          this.isBusyCounter++;\n          const path = `${this.url}{${this.newClaimData.name.value}}`;\n          this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))\n            .takeUntil(this.destroyed$)\n            .finally(() => this.isBusyCounter--)\n            .subscribe(response => {\n                if (response.code !== ResponseCode.OK) {\n                  this.errorMessage = response;\n                }\n                else {\n                  this.sharedData.incrementChangeCount(path);\n                  this.data = {\n                    id: this.newClaimData.name.value,\n                    path,\n                    values: {}\n                  };\n                  const transformationPath = `${path}/transformation`;\n                  this.isBusyCounter++;\n                  this.Api.postRequest(RequestBuilder.withCreate(transformationPath, transactionId))\n                    .takeUntil(this.destroyed$)\n                    .finally(() => {\n                      this.isBusyCounter--;\n                      this.isCreated = true;\n                    })\n                    .subscribe(response1 => {\n                        if (response1.code !== ResponseCode.OK) {\n                          this.loadData();\n                        }\n                        else {\n                          this.sharedData.incrementChangeCount(transformationPath);\n                          const attributeNames = [this.newClaimData.name.value];\n                          const attributeNamesPath = `${transformationPath}/input-attribute-names`;\n                          this.isBusyCounter++;\n                          this.Api.postRequest(RequestBuilder.withSetValue(attributeNames, attributeNamesPath, transactionId))\n                            .takeUntil(this.destroyed$)\n                            .finally(() => {\n                              this.isBusyCounter--;\n                              this.loadData();\n                            })\n                            .subscribe(response2 => {\n                                if (response2.code === ResponseCode.OK) {\n                                  this.sharedData.incrementChangeCount(attributeNamesPath);\n                                }\n                              },\n                              error => console.log(error));\n                        }\n                      },\n                      error => console.log(error));\n                }\n              },\n              error => console.log(error));\n        })\n        .catch(error => {\n        });\n    }\n  }\n\n  onAddMapping() {\n    if (this.data.values['input-attribute-names'].value.length > 0) {\n      const argumentsValue = this.data.values['input-attribute-names'].value.join(', ');\n      let returnValue = '';\n      let comment = '';\n      if (this.data.values['input-attribute-names'].value.length === 1) {\n        returnValue = `${this.data.values['input-attribute-names'].value[0]}`;\n        comment = '//Transform the element and return the appropriate value for the claim';\n      }\n      else {\n        returnValue = this.data.values['input-attribute-names'].value.map(value => `\"${value}\" : ${value}`).join(', ');\n        returnValue = `{${returnValue}}`;\n        comment = '//Transform the attributes and return the appropriate value for the claim';\n      }\n\n      const mappingFunction = `function transform_${this.data.values.name.value}(${argumentsValue}) {\n  ${comment}\n  return ${returnValue};\n}`;\n      this.setProcedureValue(this.sharedData.encodeBase64(mappingFunction));\n      this.updateProcedure();\n    }\n  }\n\n  private initEditor() {\n    this.editor = window['ace'].edit(this.editorId);\n    this.editor.setTheme('ace/theme/monokai');\n    this.editor.getSession().setMode('ace/mode/javascript');\n    this.editor.setReadOnly(this.Transaction.isReadOnlyMode);\n    this.editor.commands.addCommand({\n      name: 'save',\n      bindKey: {win: 'Ctrl-S', mac: 'Command-S'},\n      exec: (editor) => {\n        this.updateProcedure();\n      },\n      readOnly: false\n    });\n    const event: any = window['ace'].require('ace/lib/event');\n    const container: any = this.editor.container;\n\n    // -----ignore dragover event listeners on editor.--------------\n    event.addListener(container, 'dragover', (arg: any) => {\n      return event.preventDefault(arg);\n    });\n\n    // ------------handle file drop event listener on editor-----------\n    event.addListener(container, 'drop', (e) => {\n      let file: any;\n      try {\n        file = e.dataTransfer.files[0];\n        const reader = new FileReader();\n        reader.onload = () => {\n          this.setProcedureValue(reader.result);\n        };\n        reader.readAsText(file);\n        return event.preventDefault(e);\n      } catch (err) {\n        return event.stopEvent(e);\n      }\n    });\n  }\n\n  private setProcedureValue(value: string) {\n    if (value) {\n      this.editor.setValue(this.sharedData.decodeBase64(value));\n      this.isEditorOpen = true;\n    }\n    else {\n      this.editor.setValue('');\n    }\n    this.editor.clearSelection();\n  }\n\n  private updateProcedure() {\n    this.Transaction.getWriteTransaction()\n      .then(transactionId => {\n        const editorValue = this.sharedData.encodeBase64(this.editor.getValue());\n        this.Api.postRequest(editorValue ?\n          RequestBuilder.withSetValue(editorValue, this.data.values['value-transformation-procedure'].path, transactionId) :\n          RequestBuilder.withDelete(this.data.values['value-transformation-procedure'].path, transactionId)\n        )\n          .takeUntil(this.destroyed$)\n          .subscribe(response => {\n              if (response.code !== ResponseCode.OK) {\n                this.data.values['value-transformation-procedure'].hasError = true;\n              }\n              else {\n                this.data.values['value-transformation-procedure'].value = editorValue;\n                this.sharedData.incrementChangeCount(this.data.values['value-transformation-procedure'].path);\n              }\n            },\n            error => console.log(error));\n      })\n      .catch(error => {\n      });\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/oauth/components/claims/edit-claim-modal/edit-claim-modal.component.ts	(date 1546954132000)
++++ src/app/oauth/components/claims/edit-claim-modal/edit-claim-modal.component.ts	(date 1546955894000)
+@@ -1,6 +1,7 @@
+ import { Component, OnDestroy, OnInit } from '@angular/core';
+ import { Subject } from 'rxjs/Subject';
+ import { ConfigService } from '../../../../core/services/config.service';
++import { DataResolverService } from '../../../../core/services/data-resolver.service';
+ import { EndpointsService } from '../../../../core/services/endpoints';
+ import { HttpApiService } from '../../../../core/services/http-api.service';
+ import { ModalService } from '../../../../core/services/modal.service';
+@@ -26,17 +27,24 @@
+   isEditorOpen: boolean;
+   isBusyCounter = 0;
+   private editor: any;
++  private config: any;
+ 
+   constructor(private Api: HttpApiService,
+               private Transaction: TransactionService,
+               private endpoints: EndpointsService,
+               private sharedData: SharedDataService,
+               private configService: ConfigService,
++              private dataResolver: DataResolverService,
+               private modalService: ModalService) {
+   }
+ 
+   ngOnInit() {
+     this.url = this.endpoints.getClaimUrl();
++    this.configService.getOAuthClaimConfig()
++      .subscribe(config => {
++        this.config = config;
++      },
++        error => console.log(error));
+   }
+ 
+   ngOnDestroy(): void {
+@@ -69,7 +77,19 @@
+   }
+ 
+   loadData() {
+-
++    this.Transaction.getReadTransaction()
++      .then(transactionId => {
++        this.isBusyCounter++;
++        this.Api.postRequest(RequestBuilder.withGetValues(this.data.path, transactionId, true, 5))
++          .takeUntil(this.destroyed$)
++          .finally(() => this.isBusyCounter--)
++          .subscribe(response => {
++            if (response.code === ResponseCode.OK) {
++              this.data.result = this.dataResolver.parseData(response.data.value, this.config, this.data.path);
++            }
++          },
++            error => console.log(error));
++      });
+   }
+ 
+   resetNewClaimData() {

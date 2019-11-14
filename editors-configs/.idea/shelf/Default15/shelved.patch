@@ -1,0 +1,47 @@
+Index: src/app/profiles/components/side-menu/side-menu.component.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { Component, ElementRef, OnDestroy, OnInit } from '@angular/core';\nimport { NavigationEnd, Router } from '@angular/router';\nimport { Subject } from 'rxjs/Subject';\nimport { SharedDataService } from '../../../core/services/shared-data.service';\n\n@Component({\n  selector: 'app-side-menu',\n  templateUrl: './side-menu.component.html'\n})\nexport class SideMenuComponent implements OnInit, OnDestroy {\n  readonly destroyed$ = new Subject();\n\n  profileId: string;\n  sidebarDropdownisVisible: boolean;\n  profileGroup: any;\n  sidebarMenuVisibility: {};\n\n  constructor(private elementRef: ElementRef,\n              private sharedService: SharedDataService,\n              private router: Router) {\n    this.router.events\n      .takeUntil(this.destroyed$)\n      .filter((event) => event instanceof NavigationEnd)\n      .subscribe((event: NavigationEnd) => {\n        if (event.url === '/profiles') {\n          this.profileGroup = null;\n        }\n        else {\n          this.profileGroup = this.profileGroup || this.sharedService.getSelectedParam('profileGroup');\n          this.sharedService.setSelectedParam('profileGroup', null);\n          const urlTokens = event.url.split('/');\n          const profileType = urlTokens[2];\n          const profileId = urlTokens[3];\n          this.sidebarMenuVisibility = {\n            [profileId]: true\n          };\n        }\n      });\n  }\n\n  ngOnInit() {\n    this.elementRef.nativeElement.offsetParent.offsetParent.className = '';\n  }\n\n  ngOnDestroy() {\n    this.destroyed$.next(true);\n    this.destroyed$.complete();\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/profiles/components/side-menu/side-menu.component.ts	(revision 174cd12eeac7e0fd13b4a87436557b9042de9e02)
++++ src/app/profiles/components/side-menu/side-menu.component.ts	(date 1549268409000)
+@@ -2,6 +2,11 @@
+ import { NavigationEnd, Router } from '@angular/router';
+ import { Subject } from 'rxjs/Subject';
+ import { SharedDataService } from '../../../core/services/shared-data.service';
++import {
++  CreateAuthenticationProfileModal,
++  CreateOAuthProfileModal,
++  CreateUserManagementProfileModal
++} from '../../../shared/components/modals/wizards';
+ 
+ @Component({
+   selector: 'app-side-menu',
+@@ -11,7 +16,7 @@
+   readonly destroyed$ = new Subject();
+ 
+   profileId: string;
+-  sidebarDropdownisVisible: boolean;
++  newProfileDropdownToggle: boolean;
+   profileGroup: any;
+   sidebarMenuVisibility: {};
+ 
+@@ -46,4 +51,16 @@
+     this.destroyed$.next(true);
+     this.destroyed$.complete();
+   }
++
++  createAuthenticationProfile() {
++    CreateAuthenticationProfileModal.open({});
++  }
++
++  createOAuthProfile() {
++    CreateOAuthProfileModal.open({});
++  }
++
++  createUserManagementProfile() {
++    CreateUserManagementProfileModal.open({});
++  }
+ }

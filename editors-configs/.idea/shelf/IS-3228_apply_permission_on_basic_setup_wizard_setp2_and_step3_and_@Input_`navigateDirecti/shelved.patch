@@ -1,0 +1,583 @@
+Index: src/app/shared/components/modals/wizards/basic-setup-wizard/basic-setup-wizard.component.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { Component, Input, OnInit } from '@angular/core';\nimport { Router } from '@angular/router';\nimport { forkJoin, from, Observable, of, Subscription } from 'rxjs';\nimport { finalize, switchMap, take } from 'rxjs/operators';\nimport { BatchOperationsService } from '../../../../../core/services/batch-operations.service';\nimport { ConfigService } from '../../../../../core/services/config.service';\nimport { EndpointsService } from '../../../../../core/services/endpoints';\nimport { HttpApiService } from '../../../../../core/services/http-api.service';\nimport { ModalService } from '../../../../../core/services/modal.service';\nimport { NavigationService } from '../../../../../core/services/navigation.service';\nimport { PermissionsEvaluatorService } from '../../../../../core/services/permissions-evaluator.service';\nimport { RequestBuilder } from '../../../../../core/services/request.builder';\nimport { ResponseCode } from '../../../../../core/services/ResponseCode';\nimport { SharedDataService } from '../../../../../core/services/shared-data.service';\nimport { TransactionService } from '../../../../../core/services/transaction.service';\nimport { AlertModal } from '../../alert-modal/alert-modal.component';\nimport { ConfirmModal } from '../../confrim-modal/confirm-modal.component';\nimport { wizardWorkflow } from '../basic-setup-wizard/wizard-workflow';\nimport { DataStoreType } from '../types/data-store-type.enum';\nimport { DBOptions } from '../types/db-options-enum';\nimport { NavigateDirection } from '../types/navigate-direction.enum';\nimport { SigningKeyAction } from '../types/signing-key-action.enum';\nimport { WizardStep } from '../types/wizard-step.enum';\nimport {\n  ACCOUNT_DATASOURCE_NAME,\n  AUTHENTICATION_SERVICE_NAME,\n  CAPABILITIES_DESCRIPTION,\n  CAPABILITIES_TITLE,\n  CONNECTION_STRING,\n  DEFAULT_ACCOUNT_MANAGER_NAME,\n  DEFAULT_CREDENTIAL_MANAGER_NAME,\n  DEFAULT_SERVER_ROLE,\n  DEFAULT_SIGNING_KEY,\n  DEFAULT_SIMPLE_PROTOCOL_NAME,\n  DEFAULT_SSL_SERVER_KEY_NAME,\n  DRIVER,\n  EMAIL_VERIFICATION,\n  KEY_SIZE,\n  KEY_TYPE,\n  KEY_VALIDITY,\n  NO_VERIFICATION,\n  TOKEN_DATASOURCE_NAME,\n  TOKEN_SERVICE_NAME,\n  TOKEN_SERVICE_URI_PATH_PREFIX,\n  URI_PATH_PREFIX,\n  USERNAME\n} from './basic-setup-wizard-constants';\n\n@Component({\n  selector: 'app-basic-setup-wizard',\n  templateUrl: './basic-setup-wizard.component.html'\n})\nexport class BasicSetupWizardComponent implements OnInit {\n  private static modal = null;\n  readonly capabilitiesTitle = CAPABILITIES_TITLE;\n  readonly capabilitiesDescription = CAPABILITIES_DESCRIPTION;\n\n  @Input() isHidden: boolean = true;\n\n  allPermissions: any = {};\n  setupData: any = {};\n  wizardStep = WizardStep;\n  currentStep: WizardStep = WizardStep.Step_1;\n  callback: string;\n  caller: any;\n  elementsBusy$: Subscription;\n  isBusyCounter: number = 0;\n  errorMessage: any;\n  navigateDirection: NavigateDirection;\n  defaultValues: any;\n  savedEndpoints = [];\n\n  constructor(\n    private Transaction: TransactionService,\n    private endpoint: EndpointsService,\n    private Api: HttpApiService,\n    private batchService: BatchOperationsService,\n    private sharedData: SharedDataService,\n    private modalService: ModalService,\n    private endpoints: EndpointsService,\n    private configService: ConfigService,\n    private permissionsService: PermissionsEvaluatorService,\n    private router: Router) {\n  }\n\n  ngOnInit() {\n    BasicSetupWizardComponent.modal = this;\n  }\n\n  public static open() {\n    const self = BasicSetupWizardComponent.modal;\n    self.initializeAllPermissions();\n    if (self.sharedData.getChangeCount() > 0) {\n      AlertModal.open('Discard Pending Changes', 'There are pending chnages. Please cancel your current transaction');\n    }\n    else {\n      self.setupData = {\n        capabilities: {\n          codeFlow: true,\n          openIdConnect: true,\n          implicitFlow: true,\n          assistedTokenFlow: true,\n          resourceOwnerFlow: true,\n          tokenExchangeFlow: true,\n          exposeMetadata: true,\n          clientCredentialsFlow: true,\n          introspectFlow: true\n        }\n      };\n      self.isHidden = false;\n      self.errorMessage = null;\n      self.currentStep = WizardStep.Step_1;\n      self.modalService.addOpenedModal('BasicSetupModal', self, 'closeModal');\n      SharedDataService.lockScroll();\n    }\n  }\n\n  public static close() {\n    BasicSetupWizardComponent.modal.closeModal();\n  }\n\n  closeModal() {\n    ConfirmModal.open(\n      'Cancel Basic Setup',\n      'Are you sure you want to cancel? All changes will be lost.',\n      'cancelPendingChanges',\n      this\n    );\n  }\n\n  cancelPendingChanges() {\n    if (this.sharedData.getChangeCount() > 0) {\n      this.Transaction.abort('closeModalConfirmed', this);\n    }\n    else {\n      this.closeModalConfirmed();\n    }\n  }\n\n  closeModalConfirmed() {\n    this.setupData = {};\n    this.isHidden = true;\n    this.currentStep = WizardStep.Step_1;\n    this.callback = null;\n    this.caller = null;\n    this.isBusyCounter = 0;\n    this.modalService.removeOpenedModal('BasicSetupModal');\n    SharedDataService.canGeneratePassword = true;\n    SharedDataService.unlockScroll();\n    NavigationService.forceNavigate(this.router, '/');\n  }\n\n  onNavigate(direction: NavigateDirection) {\n    this.navigateDirection = direction;\n    if (this.currentStep === WizardStep.Step_7 && direction === NavigateDirection.NEXT) {\n      this.createSetupData();\n    }\n    else if (this.currentStep === WizardStep.Step_8) {\n      this.closeModalConfirmed();\n    }\n    else {\n      const currentStep = direction === NavigateDirection.NEXT ? wizardWorkflow[this.currentStep].next :\n        wizardWorkflow[this.currentStep].previous;\n\n      if (currentStep === WizardStep.Step_5) {\n        this.checkSslServerKeyExists(currentStep, direction);\n      }\n      else if (currentStep === WizardStep.Step_6) {\n        this.checkSigningKeyExists(currentStep, direction);\n      }\n      else {\n        this.currentStep = currentStep;\n      }\n    }\n  }\n\n  private initializeAllPermissions() {\n    this.allPermissions = {\n      ['dataSourcesPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesDataSourcesUrl()),\n      ['emailProviderPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesEmailProvidersUrl()),\n      ['smsProviderPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesSmsProvidersUrl()),\n      ['deploymentsPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoint.getDeploymentsUrl()),\n      ['profilePermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getProfilesUrl()),\n      ['credentialManagerPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoint.getFacilitiesCredentialManagersUrl()),\n      ['accountManagerPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoint.getFacilitiesAccountManagersUrl()),\n      ['licenseKeyPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getLicenseKeyUrl()),\n      ['signingKeysPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getLicenseKeyUrl()),\n    };\n  }\n\n  private checkSslServerKeyExists(currentStep: WizardStep, direction: NavigateDirection) {\n    const path = `${this.endpoint.getServerSSLKeysUrl()}{${DEFAULT_SSL_SERVER_KEY_NAME}}`;\n    from(this.Transaction.getReadTransaction())\n      .pipe(\n        take(1),\n        switchMap((transactionId) => this.Api.postRequest(RequestBuilder.withExists(path, transactionId)))\n      )\n      .pipe(\n        take(1)\n      )\n      .subscribe(response => {\n          this.currentStep = currentStep;\n          if (response.code === ResponseCode.OK && response.data.value) {\n            this.onNavigate(direction);\n          }\n        },\n        error => console.log(error));\n  }\n\n  private checkSigningKeyExists(currentStep: WizardStep, direction: NavigateDirection) {\n    const path = `${this.endpoint.getSigningKeysUrl()}{${DEFAULT_SIGNING_KEY}}`;\n    from(this.Transaction.getReadTransaction())\n      .pipe(\n        take(1),\n        switchMap((transactionId) => this.Api.postRequest(RequestBuilder.withExists(path, transactionId)))\n      )\n      .pipe(\n        take(1)\n      )\n      .subscribe(response => {\n          this.currentStep = currentStep;\n          if (response.code === ResponseCode.OK && response.data.value) {\n            this.onNavigate(direction);\n          }\n        },\n        error => console.log(error));\n  }\n\n  private createSetupData() {\n    const step1 = this.setupData.step1;\n    this.Transaction.getWriteTransaction()\n      .then((transactionId: number) => {\n        this.isBusyCounter++;\n        forkJoin(\n          this.createDb(DataStoreType.TOKENS_AND_SESSIONS, transactionId),\n          this.createDb(DataStoreType.USERS_AND_CREDENTIALS, transactionId),\n          this.saveLicenseKey(transactionId),\n          this.generateSSLKeys(),\n          this.generateSigningKeys(),\n          this.createCredentialManager(transactionId),\n          this.createAccountManager(transactionId),\n          this.setEnvironmentSymmetricKey(transactionId),\n          this.createServiceRole(transactionId),\n          this.setDataSourceForDefaultCachingService(transactionId)\n        )\n          .pipe(\n            switchMap((responses) => this.createAuthenticationProfile(transactionId))\n          )\n          .pipe(\n            switchMap((responses) => this.createTokenProfile(transactionId))\n          )\n          .pipe(\n            switchMap((responses) => this.deployEndpoints(transactionId))\n          )\n          .subscribe((responses) => {\n            this.sharedData.incrementChangeCount('');\n            this.currentStep = WizardStep.Step_8;\n            this.isBusyCounter--;\n          }, (error) => console.log(error));\n      });\n  }\n\n  private createDb(type: DataStoreType, transactionId): Observable<any> {\n    if (this.allPermissions.dataSourcesPermissions.canCreate) {\n      return Observable.create(observer => {\n      const dbData = this.setupData.step1[type];\n      let dataSourceName;\n\n      if (type === DataStoreType.TOKENS_AND_SESSIONS) {\n        dataSourceName = TOKEN_DATASOURCE_NAME;\n      }\n      else if (type === DataStoreType.USERS_AND_CREDENTIALS) {\n        dataSourceName = ACCOUNT_DATASOURCE_NAME;\n      }\n      else {\n        observer.next({success: true});\n        return;\n      }\n      let path = `${this.endpoints.getFacilitiesDataSourcesUrl()}{${dataSourceName}}/`;\n      this.isBusyCounter++;\n      this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))\n        .pipe(\n          take(1),\n          finalize(() => this.isBusyCounter--)\n        )\n        .subscribe(response => {\n            if (response.code === ResponseCode.OK) {\n              this.Api.postRequest(RequestBuilder.withCreate(`${path}jdbc`, transactionId))\n                .pipe(\n                  take(1)\n                )\n                .subscribe(response1 => {\n                    if (response1.code === ResponseCode.OK) {\n                      path = `${path}jdbc`;  // Update Path to JDBC\n                      let request$: Observable<any>;\n                      if (dbData.selectedOption === DBOptions.USE_LOCAL_TEST_DB) {\n                        request$ = this.setLocalDbDataSourceValue(path, transactionId);\n                      }\n                      else {\n                        request$ = this.setValuesForConfigureDb(path, dbData.result, transactionId);\n                      }\n                      request$\n                        .pipe(\n                          finalize(() => observer.complete())\n                        )\n                        .subscribe((response2) => {\n                          observer.next({success: true});\n                        }, (error) => observer.error(error));\n                    }\n                    else {\n                      observer.next({success: false, error: response});\n                      observer.complete();\n                    }\n                  },\n                  err => observer.error(err));\n            }\n            else {\n              observer.next({success: false, error: response});\n              observer.complete();\n            }\n          },\n          error => observer.error(error));\n    }); // Observable.create\n    } else {\n      return of({success: true});\n    }\n  }\n\n  private setLocalDbDataSourceValue(path: string, transactionId: number): Observable<any> {\n    const connectionString = CONNECTION_STRING;\n    const driver = DRIVER;\n    const username = USERNAME;\n    const batchId = this.batchService.createBatch();\n\n    const observable$ = forkJoin(\n      this.batchService.addToBatch(batchId,\n        RequestBuilder.withSetValue(connectionString, `${path}/connection-string`, transactionId)),\n      this.batchService.addToBatch(batchId,\n        RequestBuilder.withSetValue(driver, `${path}/driver`, transactionId)),\n      this.batchService.addToBatch(batchId,\n        RequestBuilder.withSetValue(username, `${path}/username`, transactionId))\n    )\n      .pipe(\n        take(1)\n      );\n    this.batchService.initiateRequest(batchId);\n    return observable$;\n  }\n\n  private setValuesForConfigureDb(path: string, data: any, transactionId): Observable<any> {\n    const batchId = this.batchService.createBatch();\n    const observable$ = forkJoin(\n      Object.keys(data).filter(key => data[key].value)\n        .map(key => data[key])\n        .map(item => {\n          return this.batchService.addToBatch(batchId,\n            RequestBuilder.withSetValue(item.value, `${path}/${item.name}`, transactionId));\n        })\n    )\n      .pipe(\n        take(1)\n      );\n    this.batchService.initiateRequest(batchId);\n    return observable$;\n  }\n\n  private saveLicenseKey(transactionId): Observable<any> {\n    if (this.allPermissions.licenseKeyPermissions.canCreate) {\n      if (this.setupData.licenseKeyData.fileData) {\n        return this.Api.postRequest(\n          RequestBuilder.withSetValue(this.setupData.licenseKeyData.fileData, this.endpoints.getLicenseKeyUrl(),\n            transactionId))\n          .pipe(\n            take(1)\n          );\n      }\n      else {\n        return of({success: true});\n      }\n    }\n    else {\n      return of({success: true});\n    }\n  }\n\n  private generateSSLKeys(): Observable<any> {\n    return Observable.create(observer => {\n      if (this.setupData.step5 && this.setupData.step5.selectedAction === SigningKeyAction.GENERATE_NEW) {\n        const data = {\n          commonName: this.setupData.step5.commonName,\n          country: this.setupData.step5.country,\n          id: DEFAULT_SSL_SERVER_KEY_NAME,\n          keyType: KEY_TYPE,\n          keysize: KEY_SIZE,\n          organization: this.setupData.step5.organization,\n          validity: KEY_VALIDITY\n        };\n\n        this.isBusyCounter++;\n        return this.Api.postRequest(RequestBuilder.withAddKeystore('generateSslServerKeystore', data))\n          .pipe(\n            take(1),\n            finalize(() => {\n              this.isBusyCounter--;\n              observer.complete();\n            })\n          )\n          .subscribe(response => {\n              if (response.code === ResponseCode.OK) {\n                observer.next({success: true});\n              }\n              else {\n                observer.next({success: false, error: response});\n              }\n            },\n            error => observer.error(error));\n      }\n      else {\n        observer.next({success: true});\n        observer.complete();\n      }\n    });\n  }\n\n  private generateSigningKeys(): Observable<any> {\n    return Observable.create(observer => {\n      if (this.setupData.step6 && this.setupData.step6.selectedAction === SigningKeyAction.GENERATE_NEW) {\n        const data = {\n          commonName: this.setupData.step6.commonName,\n          country: this.setupData.step6.country,\n          id: DEFAULT_SIGNING_KEY,\n          keyType: KEY_TYPE,\n          keysize: KEY_SIZE,\n          organization: this.setupData.step6.organization,\n          validity: KEY_VALIDITY\n        };\n\n        this.isBusyCounter++;\n        return this.Api.postRequest(RequestBuilder.withAddKeystore('generateSigningKeyKeystore', data))\n          .pipe(\n            take(1),\n            finalize(() => {\n              this.isBusyCounter--;\n              observer.complete();\n            })\n          )\n          .subscribe(response => {\n              if (response.code === ResponseCode.OK) {\n                observer.next({success: true});\n              }\n              else {\n                observer.next({success: false, error: response});\n              }\n            },\n            error => observer.error(error));\n      }\n      else {\n        observer.next({success: true});\n        observer.complete();\n      }\n    });\n  }\n\n  private createCredentialManager(transactionId) {\n    if (this.allPermissions.accountManagerPermissions.canCreate) {\n      const name = DEFAULT_CREDENTIAL_MANAGER_NAME;\n      return Observable.create((observer) => {\n\n        const path = `${this.endpoint.getFacilitiesCredentialManagersUrl()}{${name}}`;\n        this.isBusyCounter++;\n\n        this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))\n          .pipe(\n            take(1),\n            finalize(() => this.isBusyCounter--)\n          ).subscribe((response) => {\n\n          if (response.code === ResponseCode.OK) {\n            const algorithem = this.setupData.step1.algorithm.value ? this.setupData.step1.algorithm.value : 'Sha2WithSha256';\n            this.isBusyCounter++;\n            forkJoin(\n              this.Api.postRequest(RequestBuilder.withCreate(`${path}/${algorithem}`, transactionId)),\n              this.Api.postRequest(RequestBuilder.withSetValue(ACCOUNT_DATASOURCE_NAME, `${path}/data-source-backed/data-source-id`, transactionId))\n            )\n              .pipe(\n                take(1),\n                finalize(() => {\n                  this.isBusyCounter--;\n                  observer.complete();\n                })\n              )\n              .subscribe(responses => {\n                  observer.next({success: true});\n                },\n                err => observer.error(err));\n\n          }\n          else {\n            observer.next({success: false, error: response});\n            observer.complete();\n          }\n        });\n\n      });\n    } else {\n      return of({success: true});\n    }\n  }\n\n  private createAccountManager(transactionId) {\n    if (this.allPermissions.accountManagerPermissions.canCreate) {\n      const name = DEFAULT_ACCOUNT_MANAGER_NAME;\n      return Observable.create((observer) => {\n        const path = `${this.endpoint.getFacilitiesAccountManagersUrl()}{${name}}`;\n        this.isBusyCounter++;\n\n        this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))\n          .pipe(\n            take(1),\n            finalize(() => this.isBusyCounter--)\n          ).subscribe((response) => {\n          if (response.code === ResponseCode.OK) {\n            this.isBusyCounter++;\n            forkJoin(\n              this.Api.postRequest(RequestBuilder.withSetValue(ACCOUNT_DATASOURCE_NAME, `${path}/account-data-source`, transactionId)),\n              this.Api.postRequest(RequestBuilder.withCreate(`${path}/enable-registration`, transactionId))\n            )\n              .pipe(\n                take(1),\n                finalize(() => this.isBusyCounter--)\n              )\n              .subscribe(responses => {\n                  if (responses[1].code === ResponseCode.OK) {\n                    const verificationMethod = this.setupData.emailProvider.isCreated ? EMAIL_VERIFICATION : NO_VERIFICATION;\n                    const accountVerificationPath = `${path}/enable-registration/account-verification-method`;\n                    this.isBusyCounter++;\n                    this.Api.postRequest(\n                      RequestBuilder.withSetValue(verificationMethod, accountVerificationPath, transactionId))\n                      .pipe(\n                        take(1),\n                        finalize(() => {\n                          this.isBusyCounter--;\n                          observer.complete();\n                        })\n                      )\n                      .subscribe((response2) => {\n                        if (response2.code === ResponseCode.OK) {\n                          observer.next({success: true});\n                        }\n                        else {\n                          observer.next({success: false, error: response2});\n                        }\n                      }, (error) => observer.error(error));\n                  }\n                  else {\n                    observer.next({success: false, error: responses[1]});\n                    observer.complete();\n                  }\n\n                },\n                err => observer.error(err));\n          }\n          else {\n            observer.next({success: false, error: response});\n            observer.complete();\n          }\n        });\n\n      });\n    } else {\n      return of({success: true});\n    }\n  }\n\n  private setEnvironmentSymmetricKey(transactionId): Observable<any> {\n    return Observable.create((observer) => {\n      this.generateRandomPassword()\n        .then((pass: string) => {\n            if (pass) {\n              this.Api.postRequest(\n                RequestBuilder.withSetValue(pass, this.endpoint.getEnvironmentUrl('services/zones/default-zone/symmetric-key'), transactionId))\n                .pipe(\n                  take(1),\n                  finalize(() => observer.complete())\n                )\n                .subscribe((response) => {\n                  if (response.code === ResponseCode.OK) {\n                    observer.next({success: true});\n                  }\n                  else {\n                    observer.next({success: false, error: response});\n                  }\n                }, (error) => observer.error(error));\n            }\n            else {\n              observer.next({success: false});\n              observer.complete();\n            }\n          }\n        )\n        .catch((error) => {\n          observer.next({success: false, error});\n          observer.complete();\n        });\n    });\n  }\n\n  private generateRandomPassword() {\n    const numberOfCharacters = 64;\n    return this.sharedData.getRandomPassword(numberOfCharacters).then((pass: string) => {\n      if (pass) {\n        if (pass.length < numberOfCharacters) {\n          return this.sharedData.getRandomPassword(numberOfCharacters).then((pass1: string) => {\n            const password = pass + pass1;\n            return password.substring(password.length - numberOfCharacters);\n          });\n        }\n        else {\n          return pass;\n        }\n      }\n      else {\n        return '';\n      }\n    });\n  }\n\n  private createServiceRole(transactionId): Observable<any> {\n    if (this.allPermissions.deploymentsPermissions.canCreate) {\n      return Observable.create((observer) => {\n      const path = `${this.endpoint.getDeploymentsUrl()}{${DEFAULT_SERVER_ROLE}}`;\n      this.isBusyCounter++;\n\n      this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))\n        .pipe(\n          finalize(() => this.isBusyCounter--)\n        )\n        .subscribe((response) => {\n          if (response.code === ResponseCode.OK) {\n            this.isBusyCounter++;\n            this.Api.postRequest(RequestBuilder.withSetValue(DEFAULT_SSL_SERVER_KEY_NAME, `${path}/ssl-server-keystore`, transactionId))\n              .pipe(\n                take(1),\n                finalize(() => {\n                  this.isBusyCounter--;\n                  observer.complete();\n                })\n              )\n              .subscribe(responses => {\n                  observer.next({success: true});\n                },\n                err => observer.error(err));\n          }\n          else {\n            observer.next({success: false, error: response});\n            observer.complete();\n          }\n        }, (error) => observer.error(error));\n\n    });\n    } else {\n      return of({success: true});\n    }\n  }\n\n  private setDataSourceForDefaultCachingService(transactionId): Observable<any> {\n    return this.Api.postRequest(\n      RequestBuilder.withSetValue(TOKEN_DATASOURCE_NAME, this.endpoint.getEnvironmentDataSourceUrl(), transactionId))\n      .pipe(\n        take(1)\n      );\n  }\n\n  private createAuthenticationProfile(transactionId): Observable<any> {\n    if (this.allPermissions.profilePermissions.canCreate) {\n      return Observable.create((observer) => {\n      const profile = {\n        id: AUTHENTICATION_SERVICE_NAME,\n        type: 'auth:authentication-service'\n      };\n      this.sharedData.setProfile(profile);\n      this.isBusyCounter++;\n      this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getProfileUrl(''), transactionId))\n        .pipe(\n          take(1),\n          finalize(() => this.isBusyCounter--)\n        )\n        .subscribe(response => {\n            if (response.code === ResponseCode.OK) {\n              this.sharedData.incrementChangeCount(this.endpoints.getProfileUrl(''));\n              this.isBusyCounter++;\n              this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getAuthenticationProfileUrl(), transactionId))\n                .pipe(\n                  take(1),\n                  finalize(() => this.isBusyCounter--)\n                )\n                .subscribe(response1 => {\n                    if (response1.code === ResponseCode.OK) {\n                      this.isBusyCounter++;\n                      forkJoin(\n                        this.createEndpoints(transactionId),\n                        this.createSimpleProtocol(transactionId),\n                        this.createDefaultTokenIssuer(transactionId)\n                      )\n                        .pipe(\n                          take(1),\n                          finalize(() => {\n                            this.isBusyCounter--;\n                            observer.complete();\n                          })\n                        )\n                        .subscribe(responses => {\n                            observer.next({success: true});\n                          },\n                          error => console.log(error));\n                    }\n                    else {\n                      observer.next({success: false, error: response});\n                      observer.complete();\n                    }\n\n                  },\n                  error => console.log(error));\n            }\n            else {\n              observer.next({success: false, error: response});\n              observer.complete();\n            }\n          },\n          error => console.log(error)\n        );\n    });\n    } else {\n      return of({success: true});\n    }\n  }\n\n  private createEndpoints(transactionId: number): Observable<any> {\n    const batchId = this.batchService.createBatch();\n    const endpointsPath = this.endpoints.getEndpointsUrl();\n    const lowerCaseProfileName = AUTHENTICATION_SERVICE_NAME.toLowerCase();\n    const newEndpoints = [\n      {\n        name: `${lowerCaseProfileName}-anonymous`,\n        path: `${endpointsPath}{${lowerCaseProfileName}-anonymous}`,\n        uri: `${URI_PATH_PREFIX}/anonymous`,\n        endpointKind: 'auth-anonymous'\n      },\n      {\n        name: `${lowerCaseProfileName}-authentication`,\n        path: `${endpointsPath}{${lowerCaseProfileName}-authentication}`,\n        uri: `${URI_PATH_PREFIX}/authentication`,\n        endpointKind: 'auth-authentication'\n      },\n      {\n        name: `${lowerCaseProfileName}-registration`,\n        path: `${endpointsPath}{${lowerCaseProfileName}-registration}`,\n        uri: `${URI_PATH_PREFIX}/registration`,\n        endpointKind: 'auth-registration'\n      }\n    ];\n\n    return Observable.create(observer => {\n      // create endpoints\n      this.isBusyCounter++;\n      forkJoin(\n        newEndpoints.map(endpoint => this.batchService.addToBatch(batchId, RequestBuilder.withCreate(endpoint.path, transactionId)))\n      )\n        .pipe(\n          take(1),\n          finalize(() => this.isBusyCounter--)\n        )\n        .subscribe(responses => {\n            this.batchService.createBatch(batchId); // reset previous batch\n            const requests = [];\n            // set uri and endpoint-kind of each endpoint\n            responses.forEach((response, index) => {\n              if (response.code === ResponseCode.OK) {\n                requests.push(\n                  this.batchService.addToBatch(batchId,\n                    RequestBuilder.withSetValue(newEndpoints[index].uri, newEndpoints[index].path + '/uri', transactionId)),\n                  this.batchService.addToBatch(batchId,\n                    RequestBuilder.withSetValue(newEndpoints[index].endpointKind, newEndpoints[index].path + '/endpoint-kind', transactionId))\n                );\n                this.savedEndpoints.push(newEndpoints[index].name);\n              }\n              else {\n                observer.next({success: false, error: response});\n              }\n            });\n\n            this.isBusyCounter++;\n            forkJoin(requests)\n              .pipe(\n                take(1),\n                finalize(() => {\n                  this.isBusyCounter--;\n                  observer.complete();\n                })\n              )\n              .subscribe(responses => {\n                  observer.next({success: true});\n                },\n                error => observer.error(error));\n\n            this.batchService.initiateRequest(batchId);\n          },\n          error => observer.error(error));\n      this.batchService.initiateRequest(batchId);\n    });\n  }\n\n  private createSimpleProtocol(transactionId: number): Observable<any> {\n    return Observable.create(observer => {\n      const protocolPath = `${this.endpoints.getAuthProtocolsUrl()}{${DEFAULT_SIMPLE_PROTOCOL_NAME}}`;\n      this.isBusyCounter++;\n      this.Api.postRequest(RequestBuilder.withCreate(protocolPath, transactionId))\n        .pipe(\n          take(1),\n          finalize(() => this.isBusyCounter--)\n        )\n        .subscribe(response => {\n            if (response.code === ResponseCode.OK) {\n              this.isBusyCounter++;\n              this.Api.postRequest(RequestBuilder.withSetValue(DEFAULT_SIGNING_KEY,\n                protocolPath + '/simple-api/signing-key', transactionId))\n                .pipe(\n                  take(1),\n                  finalize(() => {\n                    this.isBusyCounter--;\n                    observer.complete();\n                  })\n                )\n                .subscribe(response => {\n                    if (response.code === ResponseCode.OK) {\n                      observer.next({success: true});\n                    }\n                    else {\n                      observer.next({success: false, error: response});\n                    }\n                  },\n                  error => observer.error(error));\n            }\n            else {\n              observer.next({success: false, error: response});\n              observer.complete();\n            }\n          },\n          error => observer.error(error));\n    });\n  }\n\n  private createDefaultTokenIssuer(transactionId: number): Observable<any> {\n    return Observable.create(observer => {\n      this.isBusyCounter++;\n      this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getTokenIssuersUrl(), transactionId))\n        .pipe(\n          take(1),\n          finalize(() => this.isBusyCounter--)\n        )\n        .subscribe(response => {\n            if (response.code === ResponseCode.OK) {\n              const defaultTokenIssuerPath = this.endpoints.getOAuthTokenIssuersUrl();\n              const batchId = this.batchService.createBatch();\n              this.isBusyCounter++;\n              forkJoin(\n                this.batchService.addToBatch(batchId, RequestBuilder.withSetValue(TOKEN_DATASOURCE_NAME,\n                  defaultTokenIssuerPath + '/default-data-source', transactionId)),\n                this.batchService.addToBatch(batchId, RequestBuilder.withCreate(defaultTokenIssuerPath + '/jwt-issuer-settings', transactionId))\n              )\n                .pipe(\n                  take(1),\n                  finalize(() => this.isBusyCounter--)\n                )\n                .subscribe(responses => {\n                    if (responses[1].code === ResponseCode.OK) {\n                      this.isBusyCounter++;\n                      this.Api.postRequest(RequestBuilder.withSetValue(DEFAULT_SIGNING_KEY,\n                        defaultTokenIssuerPath + '/jwt-issuer-settings/signing-key-id', transactionId))\n                        .pipe(\n                          take(1),\n                          finalize(() => {\n                            this.isBusyCounter--;\n                            observer.complete();\n                          })\n                        )\n                        .subscribe(response1 => {\n                            if (response1.code === ResponseCode.OK) {\n                              observer.next({success: true});\n                            }\n                            else {\n                              observer.next({success: false, error: response1});\n                            }\n                          },\n                          error => observer.error(error));\n                    }\n                    else {\n                      observer.next({success: false, error: responses[1]});\n                      observer.complete();\n                    }\n                  },\n                  error => observer.error(error));\n              this.batchService.initiateRequest(batchId);\n            }\n            else {\n              observer.next({success: false, error: response});\n              observer.complete();\n            }\n          },\n          error => observer.error(error));\n    });\n  }\n\n  private createTokenProfile(transactionId) {\n    if (this.allPermissions.profilePermissions.canCreate) {\n      return Observable.create(observer => {\n      const profile = {\n        id: TOKEN_SERVICE_NAME,\n        type: 'as:oauth-service'\n      };\n      this.sharedData.setProfile(profile);\n      this.isBusyCounter++;\n\n      this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getProfileUrl(''), transactionId))\n        .pipe(\n          take(1),\n          finalize(() => this.isBusyCounter--)\n        )\n        .subscribe(response => {\n            if (response.code === ResponseCode.OK) {\n              this.sharedData.incrementChangeCount(this.endpoints.getProfileUrl(''));\n\n              this.isBusyCounter++;\n              this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getOauthProfileUrl(), transactionId))\n                .pipe(\n                  take(1),\n                  finalize(() => this.isBusyCounter--)\n                )\n                .subscribe(response1 => {\n                    if (response.code === ResponseCode.OK) {\n                      this.isBusyCounter++;\n                      forkJoin(\n                        this.createTokenEndpoints(transactionId),\n                        this.createDefaultTokenIssuer(transactionId),\n                        this.setOAuthAuthenticationService(transactionId),\n                        this.createClientCapabilities(transactionId),\n                        this.setOpenIdConnect(transactionId)\n                      )\n                        .pipe(\n                          take(1),\n                          finalize(() => {\n                            this.isBusyCounter--;\n                            observer.complete();\n                          })\n                        )\n                        .subscribe(responses => {\n                            observer.next({success: true});\n                          },\n                          error => console.log(error));\n                    }\n                    else {\n                      observer.next({success: false, error: response});\n                      observer.complete();\n                    }\n                  },\n                  error => console.log(error));\n            }\n          },\n          error => console.log(error));\n    });\n    } else {\n      return of({success: true});\n    }\n  }\n\n  private createTokenEndpoints(transactionId: number): Observable<any> {\n    const endpointsPath = this.endpoints.getEndpointsUrl();\n    const lowerCaseProfileName = TOKEN_SERVICE_NAME.toLowerCase();\n\n    return Observable.create(observer => {\n      this.configService.getOAuthEndpointsConfig()\n        .pipe(\n          take(1)\n        )\n        .subscribe(config => {\n            const endpointKinds = config[2].values;\n            const newEndpoints = [];\n            endpointKinds.forEach(endpointKind => {\n              const endpointKindShort = endpointKind.slice(6); // remove 'oauth-' from endpoint-kind\n              newEndpoints.push(\n                {\n                  name: `${lowerCaseProfileName}-${endpointKindShort}`,\n                  path: `${endpointsPath}{${lowerCaseProfileName}-${endpointKindShort}}`,\n                  uri: `${TOKEN_SERVICE_URI_PATH_PREFIX}/${endpointKind}`,\n                  endpointKind\n                }\n              );\n            });\n\n            const batchId = this.batchService.createBatch();\n            // create endpoints\n            this.isBusyCounter++;\n            forkJoin(\n              newEndpoints.map(endpoint => this.batchService.addToBatch(batchId, RequestBuilder.withCreate(endpoint.path, transactionId)))\n            )\n              .pipe(\n                take(1),\n                finalize(() => this.isBusyCounter--)\n              )\n              .subscribe(responses => {\n                  this.batchService.createBatch(batchId); // reset previous batch\n                  const requests = [];\n                  // set uri and endpoint-kind of each endpoint\n                  responses.forEach((response, index) => {\n                    if (response.code === ResponseCode.OK) {\n                      requests.push(\n                        this.batchService.addToBatch(batchId,\n                          RequestBuilder.withSetValue(newEndpoints[index].uri, newEndpoints[index].path + '/uri', transactionId)),\n                        this.batchService.addToBatch(batchId,\n                          RequestBuilder.withSetValue(newEndpoints[index].endpointKind, newEndpoints[index].path + '/endpoint-kind', transactionId))\n                      );\n                      this.savedEndpoints.push(newEndpoints[index].name);\n                    }\n                    else {\n                      observer.next({success: false, error: response});\n                    }\n                  });\n\n                  this.isBusyCounter++;\n                  forkJoin(requests)\n                    .pipe(\n                      take(1),\n                      finalize(() => {\n                        this.isBusyCounter--;\n                        observer.complete();\n                      })\n                    )\n                    .subscribe(responses2 => {\n                        observer.next({success: true});\n                      },\n                      error => observer.error(error));\n\n                  this.batchService.initiateRequest(batchId);\n                },\n                error => observer.error(error));\n            this.batchService.initiateRequest(batchId);\n\n          },\n          error => observer.error(error));\n    });\n  }\n\n  private setOAuthAuthenticationService(transactionId: number) {\n    return Observable.create(observer => {\n      this.isBusyCounter++;\n      this.Api.postRequest(RequestBuilder.withSetValue(AUTHENTICATION_SERVICE_NAME, this.endpoints.getAuthenticationProfileLeafUrl(), transactionId))\n        .pipe(\n          take(1),\n          finalize(() => {\n            this.isBusyCounter--;\n            observer.complete();\n          })\n        )\n        .subscribe(response => {\n            if (response.code === ResponseCode.OK) {\n              observer.next({success: true});\n            }\n            else {\n              observer.next({success: false, error: response});\n            }\n          },\n          error => observer.error(error));\n\n    });\n  }\n\n  private createClientCapabilities(transactionId: number): Observable<any> {\n    const clientCapabilitiesPath = this.endpoints.getOauthProfileUrl() + 'client-capabilities/';\n    return Observable.create(observer => {\n      const batchId = this.batchService.createBatch();\n      const requests = [];\n      if (this.setupData.capabilities.codeFlow) {\n        requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withCreate(\n          clientCapabilitiesPath + 'code', transactionId)));\n      }\n      if (this.setupData.capabilities.implicitFlow) {\n        requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withCreate(\n          clientCapabilitiesPath + 'implicit', transactionId)));\n      }\n      if (this.setupData.capabilities.assistedTokenFlow) {\n        requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withCreate(\n          clientCapabilitiesPath + 'assisted-token', transactionId)));\n      }\n      if (this.setupData.capabilities.clientCredentialsFlow) {\n        requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withCreate(\n          clientCapabilitiesPath + 'client-credentials', transactionId)));\n      }\n      if (this.setupData.capabilities.introspectFlow) {\n        requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withCreate(\n          clientCapabilitiesPath + 'introspection', transactionId)));\n      }\n      if (this.setupData.capabilities.tokenExchangeFlow) {\n        requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withCreate(\n          clientCapabilitiesPath + 'token-exchange', transactionId)));\n      }\n      if (this.setupData.capabilities.resourceOwnerFlow) {\n        requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withCreate(\n          clientCapabilitiesPath + 'resource-owner-password-credentials', transactionId)));\n      }\n\n      this.isBusyCounter++;\n      forkJoin(requests)\n        .pipe(\n          take(1),\n          finalize(() => {\n            this.isBusyCounter--;\n            observer.complete();\n          })\n        )\n        .subscribe(responses => {\n            observer.next({success: true});\n          },\n          error => observer.error(error));\n\n      this.batchService.initiateRequest(batchId);\n    });\n  }\n\n  private setOpenIdConnect(transactionId: number): Observable<any> {\n    return Observable.create(observer => {\n      if (this.setupData.capabilities.openIdConnect) {\n        const openIdConnectPath = this.endpoints.getOauthProfileUrl() + 'openid-connect';\n        this.isBusyCounter++;\n        this.Api.postRequest(RequestBuilder.withCreate(openIdConnectPath, transactionId))\n          .pipe(\n            take(1),\n            finalize(() => this.isBusyCounter--)\n          )\n          .subscribe(response => {\n              if (response.code === ResponseCode.OK) {\n                const accountManagerClaimsProviderName = 'account-manager-claims-provider';\n                const observables = [\n                  this.createOpenIdScopes(transactionId),\n                  this.createDefaultClaimsMapper(transactionId),\n                  this.createDefaultClaimsProvider(transactionId, accountManagerClaimsProviderName),\n                  this.createOpenIdClaims(transactionId, accountManagerClaimsProviderName)\n                ];\n                if (this.setupData.capabilities.exposeMetadata) {\n                  observables.push(this.Api.postRequest(RequestBuilder.withCreate(openIdConnectPath + '/expose-metadata', transactionId)));\n                }\n                this.isBusyCounter++;\n                forkJoin(observables)\n                  .pipe(\n                    take(1),\n                    finalize(() => {\n                      this.isBusyCounter--;\n                      observer.complete();\n                    })\n                  )\n                  .subscribe(responses => {\n                      // TODO: handle responses\n                      observer.next({success: true});\n                    },\n                    error => observer.error(error));\n              }\n              else {\n                observer.next({success: false, error: response});\n                observer.complete();\n              }\n            },\n            error => observer.error(error));\n      } else {\n        observer.next({success: true});\n        observer.complete();\n      }\n    });\n  }\n\n  private createOpenIdScopes(transactionId: number): Observable<any> {\n    const openIdScopes: Array<any> = [\n      {\n        name: 'openid',\n        description: 'Standard OpenID Connect scope',\n        path: `${this.endpoints.getOAuthScopesListUrl()}{openid}`,\n        claims: []\n      },\n      {\n        name: 'address',\n        description: 'OpenId Connect address scope',\n        path: `${this.endpoints.getOAuthScopesListUrl()}{address}`,\n        claims: ['address']\n      },\n      {\n        name: 'email',\n        description: 'OpenId Connect email scope',\n        path: `${this.endpoints.getOAuthScopesListUrl()}{email}`,\n        claims: ['email', 'email_verified']\n      },\n      {\n        name: 'phone',\n        description: 'OpenId Connect phone scope',\n        path: `${this.endpoints.getOAuthScopesListUrl()}{phone}`,\n        claims: ['phone_number', 'phone_number_verified']\n      },\n      {\n        name: 'profile',\n        description: 'OpenId Connect profile scope',\n        path: `${this.endpoints.getOAuthScopesListUrl()}{profile}`,\n        claims: ['name', 'family_name', 'given_name', 'middle_name', 'nickname', 'preferred_username', 'profile', 'picture', 'website',\n          'gender', 'birthdate', 'zoneinfo', 'locale', 'updated_at']\n      }\n    ];\n    return Observable.create(observer => {\n      let batchId = this.batchService.createBatch();\n      forkJoin(\n        openIdScopes.map(scope => this.batchService.addToBatch(batchId,\n          RequestBuilder.withCreate(scope.path, transactionId)))\n      )\n        .pipe(\n          take(1)\n        )\n        .subscribe(responses => {\n            batchId = this.batchService.createBatch();\n            const requests = [];\n            responses.forEach((response, index) => {\n              if (response.code === ResponseCode.OK) {\n                requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withSetValue(openIdScopes[index].description,\n                  openIdScopes[index].path + '/description', transactionId)));\n                if (openIdScopes[index].claims && openIdScopes[index].claims.length > 0) {\n                  requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withSetValue(openIdScopes[index].claims,\n                    openIdScopes[index].path + '/claims', transactionId)));\n                }\n              } else {\n                observer.next({success: false, error: response});\n              }\n            });\n\n            forkJoin(requests)\n              .pipe(\n                take(1),\n                finalize(() => observer.complete())\n              )\n              .subscribe(responses => {\n                  // TODO: handle responses\n                  observer.next({success: true});\n                },\n                error => observer.error(error));\n\n            this.batchService.initiateRequest(batchId);\n          },\n          error => observer.error(error));\n\n      this.batchService.initiateRequest(batchId);\n    });\n  }\n\n  private createDefaultClaimsMapper(trasnsactionId: number): Observable<any> {\n    const defaultClaimsMapperName = 'default';\n    const path = `${this.endpoints.getClaimsMapperUrl()}{${defaultClaimsMapperName}}`;\n\n    return Observable.create(observer => {\n      this.Api.postRequest(RequestBuilder.withCreate(path, trasnsactionId))\n        .pipe(\n          take(1)\n        )\n        .subscribe(response => {\n          if (response.code === ResponseCode.OK) {\n            const claims = this.getOpenIdClaims().map((claim) => claim.name);\n            const batchId = this.batchService.createBatch();\n\n            forkJoin(\n              this.batchService.addToBatch(batchId, RequestBuilder.withSetValue(\n                defaultClaimsMapperName, `${this.endpoints.getClaimsMappersUrl()}/default-claims-mapper`, trasnsactionId)),\n              this.batchService.addToBatch(batchId, RequestBuilder.withSetValue(claims, `${path}/id_token/claim`, trasnsactionId)),\n              this.batchService.addToBatch(batchId, RequestBuilder.withSetValue(claims, `${path}/userinfo/claim`, trasnsactionId))\n            )\n              .pipe(\n                take(1),\n                finalize(() => observer.complete())\n              )\n              .subscribe(responses => {\n                  // TODO: handle responses\n                  observer.next({success: true});\n                },\n                (error) => observer.error(error));\n\n            this.batchService.initiateRequest(batchId);\n          }\n          else {\n            observer.next({success: false, error: response});\n          }\n\n        }, error => observer.error(error));\n    });\n  }\n\n  private createDefaultClaimsProvider(transactionId: number, claimsProviderName: string): Observable<any> {\n    const path = `${this.endpoints.getClaimValueProvidersUrl()}{${claimsProviderName}}`;\n    return Observable.create(observer => {\n      this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))\n        .pipe(\n          take(1)\n        )\n        .subscribe(response => {\n          if (response.code !== ResponseCode.OK) {\n            observer.next({success: false, error: response});\n            observer.complete();\n          }\n          else {\n            const providerTypePath = `${path}/account-manager-claims-provider`;\n            this.Api.postRequest(RequestBuilder.withCreate(providerTypePath, transactionId))\n              .pipe(\n                take(1)\n              )\n              .subscribe(response1 => {\n                  if (response1.code !== ResponseCode.OK) {\n                    observer.next({success: false, error: response1});\n                    observer.complete();\n                  }\n                  else {\n                    this.Api.postRequest(RequestBuilder.withSetValue(DEFAULT_ACCOUNT_MANAGER_NAME,\n                      `${providerTypePath}/account-manager/id`, transactionId))\n                      .pipe(\n                        take(1),\n                        finalize(() => observer.complete())\n                      )\n                      .subscribe(response2 => {\n                          if (response2.code === ResponseCode.OK) {\n                            observer.next({success: true});\n                          }\n                          else {\n                            observer.next({success: false, error: response2});\n                          }\n                        },\n                        (error) => observer.error(error));\n                  }\n                },\n                (error) => observer.error(error));\n          }\n\n        }, error => observer.error(error));\n    });\n  }\n\n  private createOpenIdClaims(transactionId: number, claimsProviderName: string): Observable<any> {\n    const openIdClaims: Array<any> = this.getOpenIdClaims();\n    return Observable.create(observer => {\n      let batchId = this.batchService.createBatch();\n      forkJoin(\n        openIdClaims.map(claim => this.batchService.addToBatch(batchId,\n          RequestBuilder.withCreate(claim.path, transactionId)))\n      )\n        .pipe(\n          take(1)\n        )\n        .subscribe(responses => {\n            batchId = this.batchService.createBatch();\n            const requests = [];\n            responses.forEach((response, index) => {\n              if (response.code === ResponseCode.OK) {\n                requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withSetValue(openIdClaims[index].description,\n                  openIdClaims[index].path + '/description', transactionId)));\n\n                requests.push(this.batchService.addToBatch(batchId, RequestBuilder.withSetValue(claimsProviderName,\n                  openIdClaims[index].path + '/value-provided-by', transactionId)));\n              }\n              else {\n                observer.next({success: false, error: response});\n              }\n            });\n\n            forkJoin(requests)\n              .pipe(\n                take(1),\n                finalize(() => observer.complete())\n              )\n              .subscribe(responses1 => {\n                  // TODO: handle responses1\n                  observer.next({success: true});\n                },\n                error => observer.error(error));\n\n            this.batchService.initiateRequest(batchId);\n          },\n          error => observer.error(error));\n\n      this.batchService.initiateRequest(batchId);\n    });\n  }\n\n  private getOpenIdClaims(): Array<any> {\n    // if any claim is removed from this list then remove it from `createOpenIdScopes` method as well\n    return [\n      {name: 'name', description: 'OpenID Connect name claim', path: `${this.endpoints.getClaimUrl()}{name}`},\n      {name: 'given_name', description: 'OpenID Connect given_name claim', path: `${this.endpoints.getClaimUrl()}{given_name}`},\n      {name: 'family_name', description: 'OpenID Connect family_name claim', path: `${this.endpoints.getClaimUrl()}{family_name}`},\n      {name: 'middle_name', description: 'OpenID Connect middle_name claim', path: `${this.endpoints.getClaimUrl()}{middle_name}`},\n      {name: 'nickname', description: 'OpenID Connect nickname claim', path: `${this.endpoints.getClaimUrl()}{nickname}`},\n      {\n        name: 'preferred_username',\n        description: 'OpenID Connect preferred_username claim',\n        path: `${this.endpoints.getClaimUrl()}{preferred_username}`\n      },\n      {name: 'profile', description: 'OpenID Connect profile claim', path: `${this.endpoints.getClaimUrl()}{profile}`},\n      {name: 'picture', description: 'OpenID Connect picture claim', path: `${this.endpoints.getClaimUrl()}{picture}`},\n      {name: 'website', description: 'OpenID Connect website claim', path: `${this.endpoints.getClaimUrl()}{website}`},\n      {name: 'email', description: 'OpenID Connect email claim', path: `${this.endpoints.getClaimUrl()}{email}`},\n      {name: 'email_verified', description: 'OpenID Connect email_verified claim', path: `${this.endpoints.getClaimUrl()}{email_verified}`},\n      {name: 'gender', description: 'OpenID Connect gender claim', path: `${this.endpoints.getClaimUrl()}{gender}`},\n      {name: 'birthdate', description: 'OpenID Connect birthdate claim', path: `${this.endpoints.getClaimUrl()}{birthdate}`},\n      {name: 'zoneinfo', description: 'OpenID Connect zoneinfo claim', path: `${this.endpoints.getClaimUrl()}{zoneinfo}`},\n      {name: 'locale', description: 'OpenID Connect locale claim', path: `${this.endpoints.getClaimUrl()}{locale}`},\n      {name: 'phone_number', description: 'OpenID Connect phone_number claim', path: `${this.endpoints.getClaimUrl()}{phone_number}`},\n      {\n        name: 'phone_number_verified',\n        description: 'OpenID Connect phone_number_verified claim',\n        path: `${this.endpoints.getClaimUrl()}{phone_number_verified}`\n      },\n      {name: 'address', description: 'OpenID Connect address claim', path: `${this.endpoints.getClaimUrl()}{address}`},\n      {name: 'updated_at', description: 'OpenID Connect updated_at claim', path: `${this.endpoints.getClaimUrl()}{updated_at}`}\n    ];\n  }\n\n  private deployEndpoints(transactionId): Observable<any> {\n    if (this.allPermissions.deploymentsPermissions.canCreate) {\n      const deploymentEndpointsPath = `${this.endpoint.getDeploymentsUrl()}{${DEFAULT_SERVER_ROLE}}/endpoints`;\n      return this.Api.postRequest(RequestBuilder.withSetValue(this.savedEndpoints, deploymentEndpointsPath, transactionId))\n        .pipe(\n          take(1)\n        );\n    } else {\n      return of({success: true});\n    }\n  }\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/shared/components/modals/wizards/basic-setup-wizard/basic-setup-wizard.component.ts	(revision 081b534be5de8a44d32690a87e5ac3a2eca78f88)
++++ src/app/shared/components/modals/wizards/basic-setup-wizard/basic-setup-wizard.component.ts	(date 1560758211000)
+@@ -176,15 +176,15 @@
+ 
+   private initializeAllPermissions() {
+     this.allPermissions = {
+-      ['dataSourcesPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesDataSourcesUrl()),
+-      ['emailProviderPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesEmailProvidersUrl()),
+-      ['smsProviderPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesSmsProvidersUrl()),
+-      ['deploymentsPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoint.getDeploymentsUrl()),
+-      ['profilePermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getProfilesUrl()),
+-      ['credentialManagerPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoint.getFacilitiesCredentialManagersUrl()),
+-      ['accountManagerPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoint.getFacilitiesAccountManagersUrl()),
+-      ['licenseKeyPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getLicenseKeyUrl()),
+-      ['signingKeysPermissions']: this.permissionsService.getPermissionsAsObject(this.endpoints.getLicenseKeyUrl()),
++      dataSourcesPermissions: this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesDataSourcesUrl()),
++      emailProviderPermissions: this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesEmailProvidersUrl()),
++      smsProviderPermissions: this.permissionsService.getPermissionsAsObject(this.endpoints.getFacilitiesSmsProvidersUrl()),
++      deploymentsPermissions: this.permissionsService.getPermissionsAsObject(this.endpoint.getDeploymentsUrl()),
++      profilePermissions: this.permissionsService.getPermissionsAsObject(this.endpoints.getProfilesUrl()),
++      credentialManagerPermissions: this.permissionsService.getPermissionsAsObject(this.endpoint.getFacilitiesCredentialManagersUrl()),
++      accountManagerPermissions: this.permissionsService.getPermissionsAsObject(this.endpoint.getFacilitiesAccountManagersUrl()),
++      licenseKeyPermissions: this.permissionsService.getPermissionsAsObject(this.endpoints.getLicenseKeyUrl()),
++      signingKeysPermissions: this.permissionsService.getPermissionsAsObject(this.endpoints.getSigningKeysUrl())
+     };
+   }
+ 
+@@ -261,69 +261,70 @@
+   }
+ 
+   private createDb(type: DataStoreType, transactionId): Observable<any> {
+-    if (this.allPermissions.dataSourcesPermissions.canCreate) {
+-      return Observable.create(observer => {
+-      const dbData = this.setupData.step1[type];
+-      let dataSourceName;
++    return Observable.create(observer => {
++      if (this.allPermissions.dataSourcesPermissions.canCreate) {
++        const dbData = this.setupData.step1[type];
++        let dataSourceName;
+ 
+-      if (type === DataStoreType.TOKENS_AND_SESSIONS) {
+-        dataSourceName = TOKEN_DATASOURCE_NAME;
+-      }
+-      else if (type === DataStoreType.USERS_AND_CREDENTIALS) {
+-        dataSourceName = ACCOUNT_DATASOURCE_NAME;
+-      }
+-      else {
+-        observer.next({success: true});
+-        return;
+-      }
+-      let path = `${this.endpoints.getFacilitiesDataSourcesUrl()}{${dataSourceName}}/`;
+-      this.isBusyCounter++;
+-      this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))
+-        .pipe(
+-          take(1),
+-          finalize(() => this.isBusyCounter--)
+-        )
+-        .subscribe(response => {
+-            if (response.code === ResponseCode.OK) {
+-              this.Api.postRequest(RequestBuilder.withCreate(`${path}jdbc`, transactionId))
+-                .pipe(
+-                  take(1)
+-                )
+-                .subscribe(response1 => {
+-                    if (response1.code === ResponseCode.OK) {
+-                      path = `${path}jdbc`;  // Update Path to JDBC
+-                      let request$: Observable<any>;
+-                      if (dbData.selectedOption === DBOptions.USE_LOCAL_TEST_DB) {
+-                        request$ = this.setLocalDbDataSourceValue(path, transactionId);
+-                      }
+-                      else {
+-                        request$ = this.setValuesForConfigureDb(path, dbData.result, transactionId);
+-                      }
+-                      request$
+-                        .pipe(
+-                          finalize(() => observer.complete())
+-                        )
+-                        .subscribe((response2) => {
+-                          observer.next({success: true});
+-                        }, (error) => observer.error(error));
+-                    }
+-                    else {
+-                      observer.next({success: false, error: response});
+-                      observer.complete();
+-                    }
+-                  },
+-                  err => observer.error(err));
+-            }
+-            else {
+-              observer.next({success: false, error: response});
+-              observer.complete();
+-            }
+-          },
+-          error => observer.error(error));
+-    }); // Observable.create
+-    } else {
+-      return of({success: true});
+-    }
++        if (type === DataStoreType.TOKENS_AND_SESSIONS) {
++          dataSourceName = TOKEN_DATASOURCE_NAME;
++        }
++        else if (type === DataStoreType.USERS_AND_CREDENTIALS) {
++          dataSourceName = ACCOUNT_DATASOURCE_NAME;
++        }
++        else {
++          observer.next({success: true});
++          return;
++        }
++        let path = `${this.endpoints.getFacilitiesDataSourcesUrl()}{${dataSourceName}}/`;
++        this.isBusyCounter++;
++        this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))
++          .pipe(
++            take(1),
++            finalize(() => this.isBusyCounter--)
++          )
++          .subscribe(response => {
++              if (response.code === ResponseCode.OK) {
++                this.Api.postRequest(RequestBuilder.withCreate(`${path}jdbc`, transactionId))
++                  .pipe(
++                    take(1)
++                  )
++                  .subscribe(response1 => {
++                      if (response1.code === ResponseCode.OK) {
++                        path = `${path}jdbc`;  // Update Path to JDBC
++                        let request$: Observable<any>;
++                        if (dbData.selectedOption === DBOptions.USE_LOCAL_TEST_DB) {
++                          request$ = this.setLocalDbDataSourceValue(path, transactionId);
++                        }
++                        else {
++                          request$ = this.setValuesForConfigureDb(path, dbData.result, transactionId);
++                        }
++                        request$
++                          .pipe(
++                            finalize(() => observer.complete())
++                          )
++                          .subscribe((response2) => {
++                            observer.next({success: true});
++                          }, (error) => observer.error(error));
++                      }
++                      else {
++                        observer.next({success: false, error: response});
++                        observer.complete();
++                      }
++                    },
++                    err => observer.error(err));
++              }
++              else {
++                observer.next({success: false, error: response});
++                observer.complete();
++              }
++            },
++            error => observer.error(error));
++      } else {
++        observer.next({success: true});
++        observer.complete();
++      }
++    }); // Observable.create
+   }
+ 
+   private setLocalDbDataSourceValue(path: string, transactionId: number): Observable<any> {
+@@ -365,7 +366,7 @@
+   }
+ 
+   private saveLicenseKey(transactionId): Observable<any> {
+-    if (this.allPermissions.licenseKeyPermissions.canCreate) {
++    if (this.allPermissions.licenseKeyPermissions.canUpdate) {
+       if (this.setupData.licenseKeyData.fileData) {
+         return this.Api.postRequest(
+           RequestBuilder.withSetValue(this.setupData.licenseKeyData.fileData, this.endpoints.getLicenseKeyUrl(),
+@@ -462,9 +463,9 @@
+   }
+ 
+   private createCredentialManager(transactionId) {
+-    if (this.allPermissions.accountManagerPermissions.canCreate) {
+-      const name = DEFAULT_CREDENTIAL_MANAGER_NAME;
+-      return Observable.create((observer) => {
++    const name = DEFAULT_CREDENTIAL_MANAGER_NAME;
++    return Observable.create((observer) => {
++      if (this.allPermissions.accountManagerPermissions.canCreate) {
+ 
+         const path = `${this.endpoint.getFacilitiesCredentialManagersUrl()}{${name}}`;
+         this.isBusyCounter++;
+@@ -501,16 +502,17 @@
+           }
+         });
+ 
+-      });
+-    } else {
+-      return of({success: true});
+-    }
++      } else {
++        observer.next({success: true});
++        observer.complete();
++      }
++    });
+   }
+ 
+   private createAccountManager(transactionId) {
+-    if (this.allPermissions.accountManagerPermissions.canCreate) {
+-      const name = DEFAULT_ACCOUNT_MANAGER_NAME;
+-      return Observable.create((observer) => {
++    const name = DEFAULT_ACCOUNT_MANAGER_NAME;
++    return Observable.create((observer) => {
++      if (this.allPermissions.accountManagerPermissions.canCreate) {
+         const path = `${this.endpoint.getFacilitiesAccountManagersUrl()}{${name}}`;
+         this.isBusyCounter++;
+ 
+@@ -566,10 +568,11 @@
+           }
+         });
+ 
+-      });
+-    } else {
+-      return of({success: true});
+-    }
++      } else {
++        observer.next({success: true});
++        observer.complete();
++      }
++    });
+   }
+ 
+   private setEnvironmentSymmetricKey(transactionId): Observable<any> {
+@@ -626,41 +629,42 @@
+   }
+ 
+   private createServiceRole(transactionId): Observable<any> {
+-    if (this.allPermissions.deploymentsPermissions.canCreate) {
+-      return Observable.create((observer) => {
+-      const path = `${this.endpoint.getDeploymentsUrl()}{${DEFAULT_SERVER_ROLE}}`;
+-      this.isBusyCounter++;
++    return Observable.create((observer) => {
++      if (this.allPermissions.deploymentsPermissions.canCreate) {
++        const path = `${this.endpoint.getDeploymentsUrl()}{${DEFAULT_SERVER_ROLE}}`;
++        this.isBusyCounter++;
+ 
+-      this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))
+-        .pipe(
+-          finalize(() => this.isBusyCounter--)
+-        )
+-        .subscribe((response) => {
+-          if (response.code === ResponseCode.OK) {
+-            this.isBusyCounter++;
+-            this.Api.postRequest(RequestBuilder.withSetValue(DEFAULT_SSL_SERVER_KEY_NAME, `${path}/ssl-server-keystore`, transactionId))
+-              .pipe(
+-                take(1),
+-                finalize(() => {
+-                  this.isBusyCounter--;
+-                  observer.complete();
+-                })
+-              )
+-              .subscribe(responses => {
+-                  observer.next({success: true});
+-                },
+-                err => observer.error(err));
+-          }
+-          else {
+-            observer.next({success: false, error: response});
+-            observer.complete();
+-          }
+-        }, (error) => observer.error(error));
++        this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))
++          .pipe(
++            finalize(() => this.isBusyCounter--)
++          )
++          .subscribe((response) => {
++            if (response.code === ResponseCode.OK) {
++              this.isBusyCounter++;
++              this.Api.postRequest(RequestBuilder.withSetValue(DEFAULT_SSL_SERVER_KEY_NAME, `${path}/ssl-server-keystore`, transactionId))
++                .pipe(
++                  take(1),
++                  finalize(() => {
++                    this.isBusyCounter--;
++                    observer.complete();
++                  })
++                )
++                .subscribe(responses => {
++                    observer.next({success: true});
++                  },
++                  err => observer.error(err));
++            }
++            else {
++              observer.next({success: false, error: response});
++              observer.complete();
++            }
++          }, (error) => observer.error(error));
+ 
+-    });
+-    } else {
+-      return of({success: true});
+-    }
++      } else {
++        observer.next({success: true});
++        observer.complete();
++      }
++    });
+   }
+ 
+   private setDataSourceForDefaultCachingService(transactionId): Observable<any> {
+@@ -672,67 +676,68 @@
+   }
+ 
+   private createAuthenticationProfile(transactionId): Observable<any> {
+-    if (this.allPermissions.profilePermissions.canCreate) {
+-      return Observable.create((observer) => {
+-      const profile = {
+-        id: AUTHENTICATION_SERVICE_NAME,
+-        type: 'auth:authentication-service'
+-      };
+-      this.sharedData.setProfile(profile);
+-      this.isBusyCounter++;
+-      this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getProfileUrl(''), transactionId))
+-        .pipe(
+-          take(1),
+-          finalize(() => this.isBusyCounter--)
+-        )
+-        .subscribe(response => {
+-            if (response.code === ResponseCode.OK) {
+-              this.sharedData.incrementChangeCount(this.endpoints.getProfileUrl(''));
+-              this.isBusyCounter++;
+-              this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getAuthenticationProfileUrl(), transactionId))
+-                .pipe(
+-                  take(1),
+-                  finalize(() => this.isBusyCounter--)
+-                )
+-                .subscribe(response1 => {
+-                    if (response1.code === ResponseCode.OK) {
+-                      this.isBusyCounter++;
+-                      forkJoin(
+-                        this.createEndpoints(transactionId),
+-                        this.createSimpleProtocol(transactionId),
+-                        this.createDefaultTokenIssuer(transactionId)
+-                      )
+-                        .pipe(
+-                          take(1),
+-                          finalize(() => {
+-                            this.isBusyCounter--;
+-                            observer.complete();
+-                          })
+-                        )
+-                        .subscribe(responses => {
+-                            observer.next({success: true});
+-                          },
+-                          error => console.log(error));
+-                    }
+-                    else {
+-                      observer.next({success: false, error: response});
+-                      observer.complete();
+-                    }
++    return Observable.create((observer) => {
++      if (this.allPermissions.profilePermissions.canCreate) {
++        const profile = {
++          id: AUTHENTICATION_SERVICE_NAME,
++          type: 'auth:authentication-service'
++        };
++        this.sharedData.setProfile(profile);
++        this.isBusyCounter++;
++        this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getProfileUrl(''), transactionId))
++          .pipe(
++            take(1),
++            finalize(() => this.isBusyCounter--)
++          )
++          .subscribe(response => {
++              if (response.code === ResponseCode.OK) {
++                this.sharedData.incrementChangeCount(this.endpoints.getProfileUrl(''));
++                this.isBusyCounter++;
++                this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getAuthenticationProfileUrl(), transactionId))
++                  .pipe(
++                    take(1),
++                    finalize(() => this.isBusyCounter--)
++                  )
++                  .subscribe(response1 => {
++                      if (response1.code === ResponseCode.OK) {
++                        this.isBusyCounter++;
++                        forkJoin(
++                          this.createEndpoints(transactionId),
++                          this.createSimpleProtocol(transactionId),
++                          this.createDefaultTokenIssuer(transactionId)
++                        )
++                          .pipe(
++                            take(1),
++                            finalize(() => {
++                              this.isBusyCounter--;
++                              observer.complete();
++                            })
++                          )
++                          .subscribe(responses => {
++                              observer.next({success: true});
++                            },
++                            error => console.log(error));
++                      }
++                      else {
++                        observer.next({success: false, error: response});
++                        observer.complete();
++                      }
+ 
+-                  },
+-                  error => console.log(error));
+-            }
+-            else {
+-              observer.next({success: false, error: response});
+-              observer.complete();
+-            }
+-          },
+-          error => console.log(error)
+-        );
+-    });
+-    } else {
+-      return of({success: true});
+-    }
++                    },
++                    error => console.log(error));
++              }
++              else {
++                observer.next({success: false, error: response});
++                observer.complete();
++              }
++            },
++            error => console.log(error)
++          );
++      } else {
++        observer.next({success: true});
++        observer.complete();
++      }
++    });
+   }
+ 
+   private createEndpoints(transactionId: number): Observable<any> {
+@@ -912,65 +917,66 @@
+   }
+ 
+   private createTokenProfile(transactionId) {
+-    if (this.allPermissions.profilePermissions.canCreate) {
+-      return Observable.create(observer => {
+-      const profile = {
+-        id: TOKEN_SERVICE_NAME,
+-        type: 'as:oauth-service'
+-      };
+-      this.sharedData.setProfile(profile);
+-      this.isBusyCounter++;
++    return Observable.create(observer => {
++      if (this.allPermissions.profilePermissions.canCreate) {
++        const profile = {
++          id: TOKEN_SERVICE_NAME,
++          type: 'as:oauth-service'
++        };
++        this.sharedData.setProfile(profile);
++        this.isBusyCounter++;
+ 
+-      this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getProfileUrl(''), transactionId))
+-        .pipe(
+-          take(1),
+-          finalize(() => this.isBusyCounter--)
+-        )
+-        .subscribe(response => {
+-            if (response.code === ResponseCode.OK) {
+-              this.sharedData.incrementChangeCount(this.endpoints.getProfileUrl(''));
++        this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getProfileUrl(''), transactionId))
++          .pipe(
++            take(1),
++            finalize(() => this.isBusyCounter--)
++          )
++          .subscribe(response => {
++              if (response.code === ResponseCode.OK) {
++                this.sharedData.incrementChangeCount(this.endpoints.getProfileUrl(''));
+ 
+-              this.isBusyCounter++;
+-              this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getOauthProfileUrl(), transactionId))
+-                .pipe(
+-                  take(1),
+-                  finalize(() => this.isBusyCounter--)
+-                )
+-                .subscribe(response1 => {
+-                    if (response.code === ResponseCode.OK) {
+-                      this.isBusyCounter++;
+-                      forkJoin(
+-                        this.createTokenEndpoints(transactionId),
+-                        this.createDefaultTokenIssuer(transactionId),
+-                        this.setOAuthAuthenticationService(transactionId),
+-                        this.createClientCapabilities(transactionId),
+-                        this.setOpenIdConnect(transactionId)
+-                      )
+-                        .pipe(
+-                          take(1),
+-                          finalize(() => {
+-                            this.isBusyCounter--;
+-                            observer.complete();
+-                          })
+-                        )
+-                        .subscribe(responses => {
+-                            observer.next({success: true});
+-                          },
+-                          error => console.log(error));
+-                    }
+-                    else {
+-                      observer.next({success: false, error: response});
+-                      observer.complete();
+-                    }
+-                  },
+-                  error => console.log(error));
+-            }
+-          },
+-          error => console.log(error));
+-    });
+-    } else {
+-      return of({success: true});
+-    }
++                this.isBusyCounter++;
++                this.Api.postRequest(RequestBuilder.withCreate(this.endpoints.getOauthProfileUrl(), transactionId))
++                  .pipe(
++                    take(1),
++                    finalize(() => this.isBusyCounter--)
++                  )
++                  .subscribe(response1 => {
++                      if (response.code === ResponseCode.OK) {
++                        this.isBusyCounter++;
++                        forkJoin(
++                          this.createTokenEndpoints(transactionId),
++                          this.createDefaultTokenIssuer(transactionId),
++                          this.setOAuthAuthenticationService(transactionId),
++                          this.createClientCapabilities(transactionId),
++                          this.setOpenIdConnect(transactionId)
++                        )
++                          .pipe(
++                            take(1),
++                            finalize(() => {
++                              this.isBusyCounter--;
++                              observer.complete();
++                            })
++                          )
++                          .subscribe(responses => {
++                              observer.next({success: true});
++                            },
++                            error => console.log(error));
++                      }
++                      else {
++                        observer.next({success: false, error: response});
++                        observer.complete();
++                      }
++                    },
++                    error => console.log(error));
++              }
++            },
++            error => console.log(error));
++      } else {
++        observer.next({success: true});
++        observer.complete();
++      }
++    });
+   }
+ 
+   private createTokenEndpoints(transactionId: number): Observable<any> {
+Index: src/app/system/components/overview/overview.component.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><ng-container *ngIf=\"dataLoadCount === 3 && profiles.length == 0  && dataSources.length == 0 && serviceRoles.length == 0;\">\n  <div class=\"setup-wizard-start\">\n\n    <ul class=\"setup-wizard-start-progress m0 list-reset\">\n      <li aria-current=\"true\" class=\"setup-wizard-start-progress-step is-completed\">\n        <span class=\"setup-wizard-start-progress-step-circle\"><i class=\"icon ion-checkmark\"></i></span>\n        <h3 class=\"setup-wizard-start-progress-step-description\">Installation</h3>\n      </li>\n      <li class=\"setup-wizard-start-progress-step\">\n        <span class=\"setup-wizard-start-progress-step-circle\">2</span>\n        <h3 class=\"setup-wizard-start-progress-step-description\">Basic Setup</h3>\n      </li>\n      <li class=\"setup-wizard-start-progress-step\">\n        <span class=\"setup-wizard-start-progress-step-circle\">3</span>\n        <h3 class=\"setup-wizard-start-progress-step-description\">Done</h3>\n      </li>\n    </ul>\n\n    <div class=\"mt4 center\">\n      <p class=\"white\">No configuration added yet. Run Basic Setup to complete the basic configuration.</p>\n      <button appReadOnlyMode (onClick)=\"openBasicSetup()\" class=\"button button-medium button-success\">Basic Setup</button>\n    </div>\n\n  </div>\n</ng-container>\n\n<ng-container *ngIf=\"dataLoadCount === 3 && (profiles.length > 0  || dataSources.length > 0 || serviceRoles.length > 0)\">\n  <header class=\"dashboard-header mt2 py2\">\n    <div class=\"container clearfix\">\n      <div class=\"sm-col sm-col-5\">\n        <h1 class=\"mt0\">Overview</h1>\n      </div>\n      <div class=\"sm-col sm-col-7 clearfix flex flex-center\">\n        <div class=\"sm-col sm-col-6 right-align\">\n          <div class=\"dashboard-stats\">\n            <span>{{deployments.length}}</span>\n            service{{deployments.length === 1 ? '' : 's'}} deployed\n          </div>\n        </div>\n        <div class=\"sm-col sm-col-6 right-align\">\n          <div class=\"dashboard-stats\">\n            <span>{{profiles.length}}</span>\n            profile{{profiles.length === 1 ? '' : 's'}} active\n          </div>\n        </div>\n      </div>\n    </div>\n  </header>\n\n  <div class=\"container clearfix\">\n    <div class=\"sm-col sm-col-12 py2 dashboard-table-header\">\n      <div class=\"sm-col sm-col-6\">\n        <h2 class=\"mt0 white\">\n          <span class=\"inlineicon\"><img src=\"assets/images/deployments-icon.svg\" alt=\"deployments\"></span>\n          Deployments\n        </h2>\n      </div>\n      <div class=\"sm-col sm-col-6 right-align\">\n        <button *ngIf=\"deploymentsPermissions.canCreate\" appReadOnlyMode (click)=\"createDeployment()\"\n                class=\"button button-small button-success\" role=\"button\">\n          <i class=\"icon ion-plus inlineicon\"></i>New Service Role\n        </button>\n      </div>\n    </div>\n    <table class=\"table inline-table inline-table-dark\" style=\"height: auto\">\n      <thead>\n      <tr>\n        <th>ID</th>\n        <th>Name</th>\n        <th>Role</th>\n        <th>Uptime</th>\n        <th class=\"table-action right-align\">Actions</th>\n      </tr>\n      </thead>\n      <tbody>\n      <ng-container *ngFor=\"let item of deployments\">\n        <tr *ngIf=\"item.permissions.canRead\" [ngClass]=\"{'cursor-pointer': item.roleExists}\"\n            (appRowClick)=\"updateDeployment(item.values['role'])\" [ignoreClick]=\"!item.roleExists\">\n          <td>{{item.values['id']}}</td>\n          <td>{{item.values['name']}}</td>\n          <td>\n            {{item.values['role']}}\n            <span *ngIf=\"!item.roleExists\" class=\"field-description ml1 warning\">(Not Configured)</span>\n          </td>\n          <td>{{item.values['uptime']}}</td>\n          <td class=\"table-action\">\n            <button *ngIf=\"item.roleExists\" (click)=\"updateDeployment(item.values['role'])\"\n                    class=\"button button-small button-primary-outline\">\n              View Role<i class=\"icon ion-chevron-right inlineicon inlineicon-right\"></i>\n            </button>\n            <button *ngIf=\"!item.roleExists && item.values['role']\" type=\"button\"\n                    class=\"button button-small button-primary-outline\"\n                    (click)=\"createRunTimeService(item)\"\n                    data-tooltip=\"Create new service role for this run-time service\">\n              <i class=\"icon ion-plus inlineicon\"></i>New Service Role\n            </button>\n          </td>\n        </tr>\n      </ng-container>\n      </tbody>\n    </table>\n  </div>\n\n  <div class=\"container clearfix\">\n    <div class=\"sm-col sm-col-12 py2 dashboard-table-header mt2\">\n      <div class=\"sm-col sm-col-6\">\n        <h2 class=\"mt0 white\">\n          <span class=\"inlineicon\"><img src=\"assets/images/profiles-icon.svg\" alt=\"deployments\"></span>\n          Profiles\n        </h2>\n      </div>\n      <div class=\"sm-col sm-col-6 right-align\">\n        <button *ngIf=\"profilesPermissions.canCreate\" appReadOnlyMode (click)=\"createProfile()\" type=\"button\"\n                class=\"button button-small button-success\" role=\"button\"><i class=\"icon ion-plus inlineicon\"></i>New\n          Profile\n        </button>\n      </div>\n    </div>\n    <table class=\"table inline-table inline-table-dark\" style=\"height: auto\">\n      <thead>\n      <tr>\n        <th>Name</th>\n        <th>Type</th>\n        <th class=\"table-action right-align\">Actions</th>\n      </tr>\n      </thead>\n      <tbody>\n      <tr *ngFor=\"let item of profiles | orderBy:['type']\" class=\"cursor-pointer\"\n          (appRowClick)=\"navigateToProfile(item)\">\n        <td>{{item.id | capitalize}}</td>\n        <td>{{item.type}}</td>\n        <td class=\"table-action\">\n          <button (click)=\"navigateToProfile(item)\"\n                  class=\"button button-small button-primary-outline\">View\n            <i class=\"icon ion-chevron-right inlineicon inlineicon-right\"></i>\n          </button>\n        </td>\n      </tr>\n      </tbody>\n    </table>\n  </div>\n</ng-container>\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/system/components/overview/overview.component.html	(revision 081b534be5de8a44d32690a87e5ac3a2eca78f88)
++++ src/app/system/components/overview/overview.component.html	(date 1560754794000)
+@@ -1,4 +1,4 @@
+-<ng-container *ngIf="dataLoadCount === 3 && profiles.length == 0  && dataSources.length == 0 && serviceRoles.length == 0;">
++<!--<ng-container *ngIf="dataLoadCount === 3 && profiles.length == 0  && dataSources.length == 0 && serviceRoles.length == 0;">-->
+   <div class="setup-wizard-start">
+ 
+     <ul class="setup-wizard-start-progress m0 list-reset">
+@@ -22,7 +22,7 @@
+     </div>
+ 
+   </div>
+-</ng-container>
++<!--</ng-container>-->
+ 
+ <ng-container *ngIf="dataLoadCount === 3 && (profiles.length > 0  || dataSources.length > 0 || serviceRoles.length > 0)">
+   <header class="dashboard-header mt2 py2">

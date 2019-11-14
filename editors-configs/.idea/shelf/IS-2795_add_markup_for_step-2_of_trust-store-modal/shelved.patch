@@ -1,0 +1,236 @@
+Index: src/app/shared/components/modals/facilities/trust-store-modal/trust-store-modal.component.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><div id=\"modal\" class=\"modal modal-centered\" [ngClass]=\"{active : !isHidden}\" (onClick)=\"closeModal()\">\n  <!--TODO: use app-modal here since there is a separate dropzone container now instead of whole modal being a dropzone-->\n  <div class=\"modal-content\" *ngIf=\"!isHidden\">\n\n    <div class=\"action-toolbar clearfix py2\">\n      <div class=\"action-toolbar-title\">\n        <h1 class=\"m0\">\n          <i class=\"icon ion-key inlineicon\"></i>{{title}}</h1>\n      </div>\n      <div class=\"action-toolbar-actions\">\n        <button class=\"button button-tiny button-close\" (click)=\"closeModal()\">\n          <i class=\"icon ion-android-close\"></i>\n        </button>\n      </div>\n    </div>\n\n    <div class=\"modal-content-wrapper modal-content-wrapper-split\">\n      <div class=\"clearfix content-wrapper\">\n\n        <app-spinner [isActive]=\"isBusyCounter > 0\"></app-spinner>\n\n        <div class=\"flex justify-between\">\n\n          <aside class=\"modal-content-sidebar\" role=\"contentinfo\">\n            <nav>\n              <ul class=\"list-reset m0\">\n                <li><a [class.active]=\"currentTab === 1\" (click)=\"currentTab = 1\">Text</a></li>\n                <li><a [class.active]=\"currentTab === 2\" (click)=\"currentTab = 2\">File</a></li>\n                <li><a [class.active]=\"currentTab === 3\" (click)=\"currentTab = 3\">URL</a></li>\n              </ul>\n            </nav>\n          </aside>\n\n          <section class=\"modal-content-main\">\n            <tooltip [info]=\"descriptions[currentTab - 1]\"></tooltip>\n            <div class=\"col col-12\">\n              <element-error [error]=\"error\"></element-error>\n            </div>\n            <div class=\"main-form\" align=\"left\">\n              <form id=\"keystoreForm\" (submit)=\"onSubmit()\">\n                <ng-container *ngIf=\"currentTab === 1\">\n                    <textarea name=\"keystore-input\" appDnd [(ngModel)]=\"data.keystoreText\" class=\"field col-12\"\n                              placeholder=\"Enter text here...\" rows=\"7\" (change)=\"onKeyStoreTextChanged()\"\n                              (filesDropped)=\"onTextAreaFilesDropped($event)\">\n                    </textarea>\n                </ng-container>\n                <ng-container *ngIf=\"currentTab === 2\">\n                  <div class=\"mt2\">\n                    <input type=\"file\"\n                           #fileInput\n                           (change)=\"getFileData($event.target.files)\"\n                           style=\"display:none\">\n                    <button class=\"button button-small button-success-outline\" type=\"button\"\n                            (click)=\"fileInput.click()\">Select File\n                    </button>\n                    <label>{{selectedFile.name}}</label>\n                    <br>\n                    <label>OR</label>\n                    <div class=\"dragable-area\" appDnd\n                         [ngClass]=\"{'dragover': fileDragActiveCounter > 0}\"\n                         (dndDragEnter)=\"fileDragActiveCounter = fileDragActiveCounter + 1\"\n                         (dndDragLeave)=\"fileDragActiveCounter = fileDragActiveCounter - 1\"\n                         (filesDropped)=\"getFileData($event, true); fileDragActiveCounter = 0;\">\n                      <p class=\"dragable-area-text\">Drag and drop your file here.</p>\n                    </div>\n                  </div>\n                  <div class=\"mt2\">\n                    <label>Password</label><br>\n                    <div class=\"field-group\">\n                      <input [type]=\"showPassword ? 'text' : 'password'\"\n                             class=\"field col-12\"\n                             [(ngModel)]=\"data.password\"\n                             name=\"password\"\n                             disableAutoComplete>\n                      <button type=\"button\" class=\"show-password\"\n                              (click)=\"showPassword = !showPassword\">\n                        <i class=\"icon ion-eye\"></i>\n                      </button>\n                    </div>\n                  </div>\n                </ng-container>\n                <ng-container *ngIf=\"currentTab === 3\">\n                  <div class=\"flex col-12\">\n                    <div class=\"flex-auto\">\n                      <element-input-single-select [data]=\"urlData\"\n                                                   [canUpdate]=\"false\"\n                                                   (valueChanged)=\"onUrlChanged($event)\"></element-input-single-select>\n                    </div>\n                    <div class=\"ml1\">\n                      <button type=\"button\" [disabled]=\"!urlData.value\" class=\"button button-small button-success\">\n                        &gt;&gt;&gt;\n                      </button>\n                    </div>\n                  </div>\n                </ng-container>\n\n                <div class=\"mt3\">\n                  <button type=\"submit\" class=\"button button-small button-success right\">Next</button>\n                  <button *ngIf=\"allowBack\" type=\"button\" class=\"button button-small button-light-grey right mr1\"\n                          (click)=\"onBack()\">Back\n                  </button>\n                </div>\n              </form>\n            </div>\n          </section>\n\n        </div>\n\n\n      </div>\n    </div>\n\n  </div>\n</div>\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/shared/components/modals/facilities/trust-store-modal/trust-store-modal.component.html	(revision f9583d1c209445c9c2e2386dd0c21f69e90f2f9c)
++++ src/app/shared/components/modals/facilities/trust-store-modal/trust-store-modal.component.html	(date 1532674541000)
+@@ -32,75 +32,85 @@
+           </aside>
+ 
+           <section class="modal-content-main">
+-            <tooltip [info]="descriptions[currentTab - 1]"></tooltip>
++            <tooltip [info]="currentStep === 1 ? step1Descriptions[currentTab - 1] : step2Description"></tooltip>
+             <div class="col col-12">
+               <element-error [error]="error"></element-error>
+             </div>
+             <div class="main-form" align="left">
+-              <form id="keystoreForm" (submit)="onSubmit()">
+-                <ng-container *ngIf="currentTab === 1">
++              <ng-container *ngIf="currentStep === 1">
++                <form id="keystoreStep1Form" (submit)="onStep1Submit()">
++                  <ng-container *ngIf="currentTab === 1">
+                     <textarea name="keystore-input" appDnd [(ngModel)]="data.keystoreText" class="field col-12"
+                               placeholder="Enter text here..." rows="7" (change)="onKeyStoreTextChanged()"
+                               (filesDropped)="onTextAreaFilesDropped($event)">
+                     </textarea>
+-                </ng-container>
+-                <ng-container *ngIf="currentTab === 2">
+-                  <div class="mt2">
+-                    <input type="file"
+-                           #fileInput
+-                           (change)="getFileData($event.target.files)"
+-                           style="display:none">
+-                    <button class="button button-small button-success-outline" type="button"
+-                            (click)="fileInput.click()">Select File
+-                    </button>
+-                    <label>{{selectedFile.name}}</label>
+-                    <br>
+-                    <label>OR</label>
+-                    <div class="dragable-area" appDnd
+-                         [ngClass]="{'dragover': fileDragActiveCounter > 0}"
+-                         (dndDragEnter)="fileDragActiveCounter = fileDragActiveCounter + 1"
+-                         (dndDragLeave)="fileDragActiveCounter = fileDragActiveCounter - 1"
+-                         (filesDropped)="getFileData($event, true); fileDragActiveCounter = 0;">
+-                      <p class="dragable-area-text">Drag and drop your file here.</p>
+-                    </div>
+-                  </div>
+-                  <div class="mt2">
+-                    <label>Password</label><br>
+-                    <div class="field-group">
+-                      <input [type]="showPassword ? 'text' : 'password'"
+-                             class="field col-12"
+-                             [(ngModel)]="data.password"
+-                             name="password"
+-                             disableAutoComplete>
+-                      <button type="button" class="show-password"
+-                              (click)="showPassword = !showPassword">
+-                        <i class="icon ion-eye"></i>
+-                      </button>
+-                    </div>
+-                  </div>
+-                </ng-container>
+-                <ng-container *ngIf="currentTab === 3">
+-                  <div class="flex col-12">
+-                    <div class="flex-auto">
+-                      <element-input-single-select [data]="urlData"
+-                                                   [canUpdate]="false"
+-                                                   (valueChanged)="onUrlChanged($event)"></element-input-single-select>
+-                    </div>
+-                    <div class="ml1">
+-                      <button type="button" [disabled]="!urlData.value" class="button button-small button-success">
+-                        &gt;&gt;&gt;
+-                      </button>
+-                    </div>
+-                  </div>
+-                </ng-container>
++                  </ng-container>
++                  <ng-container *ngIf="currentTab === 2">
++                    <div class="mt2">
++                      <input type="file"
++                             #fileInput
++                             (change)="getFileData($event.target.files)"
++                             style="display:none">
++                      <button class="button button-small button-success-outline" type="button"
++                              (click)="fileInput.click()">Select File
++                      </button>
++                      <label>{{selectedFile.name}}</label>
++                      <br>
++                      <label>OR</label>
++                      <div class="dragable-area" appDnd
++                           [ngClass]="{'dragover': fileDragActiveCounter > 0}"
++                           (dndDragEnter)="fileDragActiveCounter = fileDragActiveCounter + 1"
++                           (dndDragLeave)="fileDragActiveCounter = fileDragActiveCounter - 1"
++                           (filesDropped)="getFileData($event, true); fileDragActiveCounter = 0;">
++                        <p class="dragable-area-text">Drag and drop your file here.</p>
++                      </div>
++                    </div>
++                    <div class="mt2">
++                      <label>Password</label><br>
++                      <div class="field-group">
++                        <input [type]="showPassword ? 'text' : 'password'"
++                               class="field col-12"
++                               [(ngModel)]="data.password"
++                               name="password"
++                               disableAutoComplete>
++                        <button type="button" class="show-password"
++                                (click)="showPassword = !showPassword">
++                          <i class="icon ion-eye"></i>
++                        </button>
++                      </div>
++                    </div>
++                  </ng-container>
++                  <ng-container *ngIf="currentTab === 3">
++                    <div class="flex col-12">
++                      <div class="flex-auto">
++                        <element-input-single-select [data]="urlData"
++                                                     [canUpdate]="false"
++                                                     (valueChanged)="onUrlChanged($event)"></element-input-single-select>
++                      </div>
++                      <div class="ml1">
++                        <button type="button" [disabled]="!urlData.value" class="button button-small button-success">
++                          &gt;&gt;&gt;
++                        </button>
++                      </div>
++                    </div>
++                  </ng-container>
+ 
+-                <div class="mt3">
+-                  <button type="submit" class="button button-small button-success right">Next</button>
+-                  <button *ngIf="allowBack" type="button" class="button button-small button-light-grey right mr1"
+-                          (click)="onBack()">Back
+-                  </button>
+-                </div>
+-              </form>
++                  <div class="mt3">
++                    <button type="submit" class="button button-small button-success right">Next</button>
++                  </div>
++                </form>
++              </ng-container>
++              <ng-container *ngIf="currentStep === 2">
++                <form id="keystoreForm" (submit)="onStep2Submit()">
++
++                  <div class="mt3">
++                    <button type="submit" class="button button-small button-success right">Submit</button>
++                    <button type="button" class="button button-small button-light-grey right mr1" (click)="onBack()">
++                      Back
++                    </button>
++                  </div>
++                </form>
++              </ng-container>
+             </div>
+           </section>
+ 
+Index: src/app/shared/components/modals/facilities/trust-store-modal/trust-store-modal.component.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { HttpClient } from '@angular/common/http';\nimport { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';\nimport { HttpApiService } from '../../../../../core/services/http-api.service';\nimport { ModalService } from '../../../../../core/services/modal.service';\nimport { RequestBuilder } from '../../../../../core/services/request.builder';\nimport { ResponseCode } from '../../../../../core/services/ResponseCode';\nimport { SharedDataService } from '../../../../../core/services/shared-data.service';\nimport { TransactionService } from '../../../../../core/services/transaction.service';\nimport { CertificateGenerationType } from '../certificate-generation-type.enum';\n\n@Component({\n  selector: 'app-trust-store-modal',\n  templateUrl: './trust-store-modal.component.html'\n})\nexport class TrustStoreModal implements OnInit {\n\n  @Input() isHidden: boolean = true;\n  @Input() url: string;\n  @Input() reloadAfterCreation: boolean;\n  @Input() title: string;\n  @Input() type: string;\n  @Input() allowBack: boolean;\n  @Output() created = new EventEmitter();\n  @Output() back = new EventEmitter();\n  @Output() close = new EventEmitter();\n  @ViewChild('fileInput') fileInput;\n\n  isBusyCounter: number = 0;\n  fileDragActiveCounter: number = 0;\n  isEdit: boolean;\n  selectedFile: any = {};\n  showPassword: boolean;\n  data: any = {};\n  urlData: any = {};\n  error: any;\n  currentTab: number = 1;\n  currentStep: number = 1;\n  descriptions = [\n    'Copy and paste the PEM-encoded or JWKS text of the keys you wish to trust into the textarea below. ' +\n    'PEM-encoded files often have a file extension of .pem, .key, .cer, .cert and more. A PEM-encoded file is text ' +\n    'usually begins with the header -----BEGIN CERTIFICATE-----. (If this header is omitted, it will be automatically ' +\n    'added as necessary.) JWKS keys are encoded in JSON. You may drag and drop a file onto the text area.',\n    'Select or drag and drop a PEM- or DER-encoded file, JWKS file, or a keystore file that contains keys you wish to trust. ' +\n    'Common file extensions are .pem, .key, .der, .cer, .cert, .jwks, .json, .jks, .jceks, .ks, .p12, .pfx or .pkcs12. ' +\n    'If the file is encrypted, enter the password necessary to decrypt it.',\n    'Enter a URL or choose one of the common ones from the dropdown list. You can but do not need to include the scheme; ' +\n    '\"https://\" will always be used. After selecting or typing a URL, click the >> button. The certificates used by that ' +\n    'server will displayed and you will have the option to view and trust them.'\n  ];\n  private paramKey: string;\n\n  private static modal = null;\n\n  constructor(private http: HttpClient,\n              private api: HttpApiService,\n              private transaction: TransactionService,\n              private sharedService: SharedDataService,\n              private modalService: ModalService) {\n    if (!TrustStoreModal.modal) {\n      TrustStoreModal.modal = this;\n    }\n  }\n\n  ngOnInit(): any {\n    this.paramKey = this.sharedService.getSelectedParam(this.type + '-facilities');\n    this.data = {};\n    this.urlData = {\n      name: 'url',\n      items: ['https://api.bankid.com'],\n      value: ''\n    };\n    this.isEdit = false;\n    if (this.paramKey) {\n      this.data.id = this.paramKey;\n      this.isEdit = true;\n    }\n    this.isBusyCounter = 0;\n    if (this.type === 'generateSslServerKeystore') {\n      this.type = 'addSslServerKeystore';\n    }\n    else if (this.type === 'generateSigningKeyKeystore') {\n      this.type = 'addSigningKeystore';\n    }\n  }\n\n  public static open(title: string, type: string, url: string, reloadAfterCreation: boolean) {\n    let self = TrustStoreModal.modal;\n    self.title = title;\n    self.url = url;\n    self.errorMessage = null;\n    self.type = type;\n    self.reloadAfterCreation = reloadAfterCreation;\n    self.paramKey = self.sharedService.getSelectedParam(type + '-facilities');\n    self.data = {};\n    self.urlData.value = null;\n    self.isEdit = false;\n    if (self.paramKey) {\n      self.data.id = self.paramKey;\n      self.isEdit = true;\n    }\n    if (type === 'generateSslServerKeystore') {\n      self.type = 'addSslServerKeystore';\n    }\n    else if (type === 'generateSigningKeyKeystore') {\n      self.type = 'addSigningKeystore';\n    }\n    self.isHidden = false;\n    self.isBusyCounter = 0;\n    self.modalService.addOpenedModal('TrustStoreModal', self, 'closeModal');\n    SharedDataService.lockScroll();\n  }\n\n  public static close() {\n    TrustStoreModal.modal.closeModal();\n  }\n\n  closeModal() {\n    this.isHidden = true;\n    this.selectedFile = {};\n    this.error = null;\n    this.allowBack = false;\n    this.isBusyCounter = 0;\n    this.currentTab = 1;\n    this.currentStep = 1;\n    this.modalService.removeOpenedModal('TrustStoreModal');\n    this.close.emit();\n    SharedDataService.unlockScroll();\n  }\n\n  onTextAreaFilesDropped(fileList: Array<File>) {\n    this.error = null;\n    if (fileList.length === 1) {\n      const file: File = fileList[0];\n      let fileReader = new FileReader();\n      this.data.keystore = '';\n      fileReader.onload = (event: any) => {\n        const index = event.target.result.indexOf('base64,') + 7;\n        const data = event.target.result.substring(index);\n        this.data.keystoreText = this.sharedService.decodeBase64(data);\n        this.onKeyStoreTextChanged();\n      };\n      fileReader.readAsDataURL(file);\n    }\n  }\n\n  onKeyStoreTextChanged() {\n    if (this.data.keystoreText) {\n      if (!this.data.keystoreText.startsWith('{') && !this.data.keystoreText.startsWith('-----BEGIN CERTIFICATE-----')) {\n        this.data.keystoreText = '-----BEGIN CERTIFICATE-----\\n' + this.data.keystoreText + '\\n-----END CERTIFICATE-----\\n';\n      }\n    }\n  }\n\n  getFileData(fileList: Array<File>, isFileDnd?: boolean) {\n    this.error = null;\n    if (fileList.length === 1) {\n      const file: File = fileList[0];\n      const ext = file.name.slice((file.name.lastIndexOf('.') - 1 >>> 0) + 1); // extracting . with the extension as well\n      this.selectedFile.name = file.name;\n      this.selectedFile.ext = ext;\n      let fileReader = new FileReader();\n      this.data.keystoreFile = '';\n      fileReader.onload = (event: any) => {\n        const index = event.target.result.indexOf('base64,') + 7;\n        const data = event.target.result.substring(index);\n        const decodedData = this.sharedService.decodeBase64(data);\n        if (decodedData.includes('-----BEGIN') || decodedData.trim().startsWith('{') ||\n          decodedData.substring(0, 512).includes('://')) {\n          this.data.keystoreFile = decodedData;\n        }\n        else {\n          this.data.keystoreFile = data;\n        }\n      };\n      fileReader.readAsDataURL(file);\n    }\n    else {\n      this.data.keystoreFile = null;\n      this.selectedFile = {};\n    }\n    if (isFileDnd) {\n      this.fileInput.nativeElement.value = '';\n    }\n  }\n\n  onUrlChanged(value: string) {\n    this.urlData.value = value;\n    if (this.urlData.value) {\n      if (this.urlData.value.startsWith('https://') || this.urlData.value.startsWith('http://')) {\n        if (this.urlData.value.startsWith('http://')) {\n          this.urlData.value = this.urlData.value.replace('http://', 'https://');\n        }\n      }\n      else {\n        this.urlData.value = 'https://' + this.urlData.value;\n      }\n    }\n  }\n\n  onSubmit() {\n    this.error = null;\n    if (this.data.id && this.data.keystore) {\n      let data = this.data;\n      this.isBusyCounter++;\n      this.api.postRequest(RequestBuilder.withAddKeystore(this.type, data))\n        .finally(() => this.isBusyCounter--)\n        .subscribe(response => {\n            if (response.code === ResponseCode.OK) {\n              this.created.emit({value: this.data.id, reload: this.reloadAfterCreation});\n              this.closeModal();\n            }\n            else {\n              this.error = response;\n            }\n          },\n          error => {\n            this.error = error;\n          });\n    }\n  }\n\n  onBack() {\n    this.back.emit();\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/shared/components/modals/facilities/trust-store-modal/trust-store-modal.component.ts	(revision f9583d1c209445c9c2e2386dd0c21f69e90f2f9c)
++++ src/app/shared/components/modals/facilities/trust-store-modal/trust-store-modal.component.ts	(date 1532674541000)
+@@ -35,7 +35,7 @@
+   error: any;
+   currentTab: number = 1;
+   currentStep: number = 1;
+-  descriptions = [
++  step1Descriptions = [
+     'Copy and paste the PEM-encoded or JWKS text of the keys you wish to trust into the textarea below. ' +
+     'PEM-encoded files often have a file extension of .pem, .key, .cer, .cert and more. A PEM-encoded file is text ' +
+     'usually begins with the header -----BEGIN CERTIFICATE-----. (If this header is omitted, it will be automatically ' +
+@@ -47,6 +47,7 @@
+     '"https://" will always be used. After selecting or typing a URL, click the >> button. The certificates used by that ' +
+     'server will displayed and you will have the option to view and trust them.'
+   ];
++  step2Description = 'Step 2';
+   private paramKey: string;
+ 
+   private static modal = null;
+@@ -197,29 +198,34 @@
+     }
+   }
+ 
+-  onSubmit() {
++  onStep1Submit() {
+     this.error = null;
+-    if (this.data.id && this.data.keystore) {
+-      let data = this.data;
+-      this.isBusyCounter++;
+-      this.api.postRequest(RequestBuilder.withAddKeystore(this.type, data))
+-        .finally(() => this.isBusyCounter--)
+-        .subscribe(response => {
+-            if (response.code === ResponseCode.OK) {
+-              this.created.emit({value: this.data.id, reload: this.reloadAfterCreation});
+-              this.closeModal();
+-            }
+-            else {
+-              this.error = response;
+-            }
+-          },
+-          error => {
+-            this.error = error;
+-          });
+-    }
++    this.currentStep++;
++    // if (this.data.id && this.data.keystore) {
++    //   let data = this.data;
++    //   this.isBusyCounter++;
++    //   this.api.postRequest(RequestBuilder.withAddKeystore(this.type, data))
++    //     .finally(() => this.isBusyCounter--)
++    //     .subscribe(response => {
++    //         if (response.code === ResponseCode.OK) {
++    //           this.created.emit({value: this.data.id, reload: this.reloadAfterCreation});
++    //           this.closeModal();
++    //         }
++    //         else {
++    //           this.error = response;
++    //         }
++    //       },
++    //       error => {
++    //         this.error = error;
++    //       });
++    // }
++  }
++
++  onStep2Submit() {
++
+   }
+ 
+   onBack() {
+-    this.back.emit();
++    this.currentStep--;
+   }
+ }

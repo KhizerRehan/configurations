@@ -1,0 +1,1269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="a25e7474-9f0c-4714-8d17-6094fb0ea06b" name="Default" comment="IS-4056 add new test to check new service role created title should match">
+      <change afterPath="$PROJECT_DIR$/e2e/src/modules/system/components/deployments/dep.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/e2e/protractor.conf.js" beforeDir="false" afterPath="$PROJECT_DIR$/e2e/protractor.conf.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/e2e/src/app.e2e-spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/e2e/src/app.e2e-spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/e2e/src/modules/system/components/deployments/deployments.e2e-spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/e2e/src/modules/system/components/deployments/deployments.e2e-spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+    </list>
+    <list id="56c533ab-995e-47cb-a768-e20dd6e6f745" name="Temp" comment="">
+      <change beforePath="$PROJECT_DIR$/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/run.sh" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExportToHTMLSettings">
+    <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/exportToHTML" />
+  </component>
+  <component name="Git.Settings">
+    <excluded-from-favorite>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="master" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </excluded-from-favorite>
+    <favorite-branches>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="fix/IS-3185-modal-element-navigation" />
+                <branch-info repo="$PROJECT_DIR$" source="fix/IS-3304-fix-multi-factor-action" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3422-switch-authentication-action" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3424-add-sequence-authentication-action" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3446-dcr-client-authentication-method" />
+                <branch-info repo="$PROJECT_DIR$" source="fix/IS-3444-add-delete-button-client-service-provider" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3405-cc-capability-for-non-templatized-dcr" />
+                <branch-info repo="$PROJECT_DIR$" source="fix/IS-3461-profile-route-change" />
+                <branch-info repo="$PROJECT_DIR$" source="fix/IS-3460-deleted-profiles-in-side-nav" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3271-add-step-to-define-algorithm-in-token-profile-wizard" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3470-draggable-mfa-action-table" />
+                <branch-info repo="$PROJECT_DIR$" source="dev" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3781-add-view-cert-button-to-client-cert-used-for-mTLS" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3645-restconf-api-builder" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3755-obtain-license-from-dev-portal" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3818-selection-of-existing-of-facilities-in-basic-wizard" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-3818-selection-of-existing-facilities-in-basic-wizard" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-4018-selection-of-existing-facilities-in-basic-wizard" />
+                <branch-info repo="$PROJECT_DIR$" source="feature/IS-4021-add-progress-steps-on-profile-wizards" />
+              </list>
+            </value>
+          </entry>
+          <entry type="REMOTE">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="origin/feat/IS-3733-upload-configuration" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </favorite-branches>
+    <option name="PREVIEW_PUSH_PROTECTED_ONLY" value="true" />
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="a" />
+        <option value="p" />
+        <option value="e" />
+        <option value="oc" />
+      </list>
+    </option>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="9ef82ac077258a1189ec80bd50ea1c44f9cc01ef" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
+  </component>
+  <component name="ProjectId" id="1OP9XOsxgeWfzAk1bDI9ZQAgtCb" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="ChangesTree.GroupingKeys" value="directory" />
+    <property name="Git.Branch.Popup.ShowAllRemotes" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="TODO_SCOPE" value="All Places" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="editor.config.ad.shown" value="true" />
+    <property name="full.screen.before.presentation.mode" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/e2e/src/shared" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="$USER_HOME$/.nvm/versions/node/v11.11.0/bin/node" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="$PROJECT_DIR$/node_modules/tslint" />
+    <property name="nodejs.protractor.protractor_package" value="$PROJECT_DIR$/node_modules/protractor" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="/usr/local/bin/node" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="restartRequiresConfirmation" value="false" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+    <property name="settings.editor.selected.configurable" value="Errors" />
+    <property name="settings.editor.splitter.proportion" value="0.20937042" />
+    <property name="ts.external.directory.path" value="$PROJECT_DIR$/node_modules/typescript/lib" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/e2e/src/shared" />
+      <recent name="$PROJECT_DIR$/e2e/src/modules/system/components/deployments" />
+      <recent name="$PROJECT_DIR$/e2e/src/modules/system/components" />
+      <recent name="$PROJECT_DIR$/e2e/src/modules/System/components" />
+      <recent name="$PROJECT_DIR$/src/app/shared/components/modals/facilities/facilities-modal/types" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/e2e/src/modules/System/components/overview" />
+      <recent name="$PROJECT_DIR$/src/app/shared/directives/copy-clipboard" />
+      <recent name="$PROJECT_DIR$/src/app/shared/components" />
+      <recent name="$PROJECT_DIR$/src/app/shared/components/modals/wizards/basic-setup-wizard/steps" />
+      <recent name="$PROJECT_DIR$/src/app/shared/components/modals/wizards/basic-setup-wizard/steps/basic-setup-wizard-step-8" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="npm.build.prod">
+    <configuration name="Curity App" type="JavaScriptTestRunnerProtractor" temporary="true" nameIsGenerated="true">
+      <config-file value="$PROJECT_DIR$/e2e/protractor.conf.js" />
+      <node-interpreter value="project" />
+      <protractor-package value="$PROJECT_DIR$/node_modules/protractor" />
+      <protractor-options value="" />
+      <envs />
+      <scope-kind value="SUITE" />
+      <test-file value="$PROJECT_DIR$/e2e/src/app.e2e-spec.ts" />
+      <test-names>
+        <test-name value="Curity App" />
+      </test-names>
+      <method v="2" />
+    </configuration>
+    <configuration name="Curity App.should logged in dashboard" type="JavaScriptTestRunnerProtractor" temporary="true" nameIsGenerated="true">
+      <config-file value="$PROJECT_DIR$/e2e/protractor.conf.js" />
+      <node-interpreter value="project" />
+      <protractor-package value="$PROJECT_DIR$/node_modules/protractor" />
+      <protractor-options value="" />
+      <envs />
+      <scope-kind value="TEST" />
+      <test-file value="$PROJECT_DIR$/e2e/src/app.e2e-spec.ts" />
+      <test-names>
+        <test-name value="Curity App" />
+        <test-name value="should logged in dashboard" />
+      </test-names>
+      <method v="2" />
+    </configuration>
+    <configuration name="Curity App.should navigate to profiles" type="JavaScriptTestRunnerProtractor" temporary="true" nameIsGenerated="true">
+      <config-file value="$PROJECT_DIR$/e2e/protractor.conf.js" />
+      <node-interpreter value="project" />
+      <protractor-package value="$PROJECT_DIR$/node_modules/protractor" />
+      <protractor-options value="" />
+      <envs />
+      <scope-kind value="TEST" />
+      <test-file value="$PROJECT_DIR$/e2e/src/app.e2e-spec.ts" />
+      <test-names>
+        <test-name value="Curity App" />
+        <test-name value="should navigate to profiles" />
+      </test-names>
+      <method v="2" />
+    </configuration>
+    <configuration name="app.e2e-spec.ts" type="JavaScriptTestRunnerProtractor" temporary="true" nameIsGenerated="true">
+      <config-file value="$PROJECT_DIR$/e2e/protractor.conf.js" />
+      <node-interpreter value="project" />
+      <protractor-package value="$PROJECT_DIR$/node_modules/protractor" />
+      <protractor-options value="" />
+      <envs />
+      <scope-kind value="TEST_FILE" />
+      <test-file value="$PROJECT_DIR$/e2e/src/app.e2e-spec.ts" />
+      <method v="2" />
+    </configuration>
+    <configuration name="build.dev" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="build.dev" />
+      </scripts>
+      <node-interpreter value="$USER_HOME$/.nvm/versions/node/v11.11.0/bin/node" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="build.dev.watch" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="build.dev.watch" />
+      </scripts>
+      <node-interpreter value="$USER_HOME$/.nvm/versions/node/v11.11.0/bin/node" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="build.prod" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="build.prod" />
+      </scripts>
+      <node-interpreter value="$USER_HOME$/.nvm/versions/node/v11.11.0/bin/node" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="npm.build.dev" />
+      <item itemvalue="npm.build.dev.watch" />
+      <item itemvalue="npm.build.prod" />
+      <item itemvalue="Protractor.Curity App" />
+      <item itemvalue="Protractor.app.e2e-spec.ts" />
+      <item itemvalue="Protractor.Curity App.should navigate to profiles" />
+      <item itemvalue="Protractor.Curity App.should logged in dashboard" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Protractor.Curity App.should logged in dashboard" />
+        <item itemvalue="Protractor.Curity App.should navigate to profiles" />
+        <item itemvalue="Protractor.app.e2e-spec.ts" />
+        <item itemvalue="Protractor.Curity App" />
+        <item itemvalue="Protractor.Curity App" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a25e7474-9f0c-4714-8d17-6094fb0ea06b" name="Default" comment="" />
+      <changelist id="56c533ab-995e-47cb-a768-e20dd6e6f745" name="Temp" comment="" />
+      <created>1529393478957</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1529393478957</updated>
+      <workItem from="1529393481798" duration="6532000" />
+      <workItem from="1529475619973" duration="734000" />
+      <workItem from="1529498649290" duration="4016000" />
+      <workItem from="1529509563983" duration="599000" />
+      <workItem from="1529560566920" duration="14115000" />
+      <workItem from="1529595639324" duration="3943000" />
+      <workItem from="1529647496527" duration="18882000" />
+      <workItem from="1529682386882" duration="12000" />
+      <workItem from="1529907498625" duration="16471000" />
+      <workItem from="1529944853426" duration="44000" />
+      <workItem from="1529958916921" duration="1377000" />
+      <workItem from="1529992867074" duration="17722000" />
+      <workItem from="1530080249968" duration="12556000" />
+      <workItem from="1530119374727" duration="12000" />
+      <workItem from="1530167383771" duration="11499000" />
+      <workItem from="1530197078756" duration="604000" />
+      <workItem from="1530254089942" duration="11613000" />
+      <workItem from="1530285079081" duration="56000" />
+      <workItem from="1530297058850" duration="1934000" />
+      <workItem from="1530512888753" duration="14624000" />
+      <workItem from="1530600217893" duration="13454000" />
+      <workItem from="1530637851498" duration="603000" />
+      <workItem from="1530685983134" duration="14014000" />
+      <workItem from="1530772600868" duration="1479000" />
+      <workItem from="1530774793007" duration="4583000" />
+      <workItem from="1530811762057" duration="315000" />
+      <workItem from="1530858164945" duration="11359000" />
+      <workItem from="1530893427818" duration="108000" />
+      <workItem from="1531043008176" duration="9000" />
+      <workItem from="1531117117751" duration="14285000" />
+      <workItem from="1531204566170" duration="17346000" />
+      <workItem from="1531236464261" duration="606000" />
+      <workItem from="1531290441539" duration="9515000" />
+      <workItem from="1531322426568" duration="602000" />
+      <workItem from="1531377812502" duration="9847000" />
+      <workItem from="1531419322963" duration="22000" />
+      <workItem from="1531422754532" duration="2052000" />
+      <workItem from="1531463229326" duration="7304000" />
+      <workItem from="1531569409655" duration="43000" />
+      <workItem from="1531723791028" duration="16757000" />
+      <workItem from="1531755201810" duration="602000" />
+      <workItem from="1531808576971" duration="11318000" />
+      <workItem from="1531843907578" duration="134000" />
+      <workItem from="1531895848739" duration="11395000" />
+      <workItem from="1531981937052" duration="3689000" />
+      <workItem from="1532012973403" duration="619000" />
+      <workItem from="1532024227678" duration="380000" />
+      <workItem from="1532067995975" duration="5713000" />
+      <workItem from="1532113430954" duration="10000" />
+      <workItem from="1532326911680" duration="14838000" />
+      <workItem from="1532370698791" duration="145000" />
+      <workItem from="1532414399286" duration="12427000" />
+      <workItem from="1532444809642" duration="604000" />
+      <workItem from="1532515494768" duration="7182000" />
+      <workItem from="1532586782321" duration="8901000" />
+      <workItem from="1532616966545" duration="1752000" />
+      <workItem from="1532671617125" duration="12905000" />
+      <workItem from="1532704481906" duration="602000" />
+      <workItem from="1532872055866" duration="328000" />
+      <workItem from="1532872393609" duration="2077000" />
+      <workItem from="1532932225107" duration="6270000" />
+      <workItem from="1532945221699" duration="10712000" />
+      <workItem from="1532976098702" duration="11000" />
+      <workItem from="1533018807908" duration="19878000" />
+      <workItem from="1533049571140" duration="543000" />
+      <workItem from="1533105923369" duration="9428000" />
+      <workItem from="1533136609515" duration="1197000" />
+      <workItem from="1533188385704" duration="21243000" />
+      <workItem from="1533223037899" duration="283000" />
+      <workItem from="1533277442844" duration="13511000" />
+      <workItem from="1533310576100" duration="599000" />
+      <workItem from="1533537422660" duration="8545000" />
+      <workItem from="1533577215099" duration="11000" />
+      <workItem from="1533623150278" duration="16293000" />
+      <workItem from="1533658490005" duration="601000" />
+      <workItem from="1533710456145" duration="6982000" />
+      <workItem from="1533724521511" duration="3787000" />
+      <workItem from="1533741780805" duration="599000" />
+      <workItem from="1533797029319" duration="9659000" />
+      <workItem from="1533816790462" duration="2700000" />
+      <workItem from="1533827545603" duration="603000" />
+      <workItem from="1533883487454" duration="4164000" />
+      <workItem from="1533920871421" duration="599000" />
+      <workItem from="1534141630332" duration="16212000" />
+      <workItem from="1534172699881" duration="638000" />
+      <workItem from="1534177874454" duration="762000" />
+      <workItem from="1534236786314" duration="2383000" />
+      <workItem from="1534311214428" duration="16565000" />
+      <workItem from="1534399162023" duration="19874000" />
+      <workItem from="1534433912076" duration="1202000" />
+      <workItem from="1534485783364" duration="13587000" />
+      <workItem from="1534521336871" duration="604000" />
+      <workItem from="1534666532466" duration="23149000" />
+      <workItem from="1534718777869" duration="14000" />
+      <workItem from="1534744766711" duration="14490000" />
+      <workItem from="1534778354095" duration="10764000" />
+      <workItem from="1535098584113" duration="562000" />
+      <workItem from="1535114767190" duration="781000" />
+      <workItem from="1535349314118" duration="20226000" />
+      <workItem from="1535383137770" duration="602000" />
+      <workItem from="1535435743335" duration="21730000" />
+      <workItem from="1535469378741" duration="603000" />
+      <workItem from="1535523224462" duration="19321000" />
+      <workItem from="1535557009354" duration="603000" />
+      <workItem from="1535610172174" duration="20544000" />
+      <workItem from="1535640869451" duration="602000" />
+      <workItem from="1535696597234" duration="8533000" />
+      <workItem from="1535732764050" duration="602000" />
+      <workItem from="1535956478191" duration="13797000" />
+      <workItem from="1536042644737" duration="17199000" />
+      <workItem from="1536075102069" duration="599000" />
+      <workItem from="1536128749466" duration="11473000" />
+      <workItem from="1536162213559" duration="602000" />
+      <workItem from="1536215548042" duration="4850000" />
+      <workItem from="1536248350821" duration="30000" />
+      <workItem from="1536302390833" duration="12936000" />
+      <workItem from="1536345305641" duration="140000" />
+      <workItem from="1536404318973" duration="602000" />
+      <workItem from="1536412335455" duration="58000" />
+      <workItem from="1536432155975" duration="23000" />
+      <workItem from="1536520471436" duration="98000" />
+      <workItem from="1536560560741" duration="4253000" />
+      <workItem from="1536569136824" duration="4664000" />
+      <workItem from="1536598916186" duration="533000" />
+      <workItem from="1536646379595" duration="6588000" />
+      <workItem from="1536733292404" duration="12142000" />
+      <workItem from="1536764169383" duration="603000" />
+      <workItem from="1536820454738" duration="9783000" />
+      <workItem from="1536853124091" duration="209000" />
+      <workItem from="1536906179026" duration="4814000" />
+      <workItem from="1536934789255" duration="602000" />
+      <workItem from="1537006869921" duration="496000" />
+      <workItem from="1537091194936" duration="26000" />
+      <workItem from="1537167373210" duration="11776000" />
+      <workItem from="1537196429875" duration="602000" />
+      <workItem from="1537251926985" duration="15097000" />
+      <workItem from="1537284655581" duration="523000" />
+      <workItem from="1537336005456" duration="18019000" />
+      <workItem from="1537374649912" duration="447000" />
+      <workItem from="1537770703571" duration="17489000" />
+      <workItem from="1537802283214" duration="606000" />
+      <workItem from="1537821280297" duration="271000" />
+      <workItem from="1537857563225" duration="10301000" />
+      <workItem from="1537888332802" duration="872000" />
+      <workItem from="1537944383470" duration="12562000" />
+      <workItem from="1538025558652" duration="17895000" />
+      <workItem from="1538064818909" duration="608000" />
+      <workItem from="1538114541719" duration="9144000" />
+      <workItem from="1538148382156" duration="604000" />
+      <workItem from="1538376817996" duration="8631000" />
+      <workItem from="1538406713756" duration="4000000" />
+      <workItem from="1538463406170" duration="13593000" />
+      <workItem from="1538493561752" duration="2328000" />
+      <workItem from="1538501693857" duration="650000" />
+      <workItem from="1538547487103" duration="5549000" />
+      <workItem from="1538579164687" duration="9000" />
+      <workItem from="1538635598422" duration="15874000" />
+      <workItem from="1538666102997" duration="1625000" />
+      <workItem from="1538721584211" duration="10703000" />
+      <workItem from="1538752587466" duration="513000" />
+      <workItem from="1538980826642" duration="13781000" />
+      <workItem from="1539007729564" duration="367000" />
+      <workItem from="1539013454544" duration="616000" />
+      <workItem from="1539066351975" duration="14102000" />
+      <workItem from="1539097995044" duration="603000" />
+      <workItem from="1539154187332" duration="16830000" />
+      <workItem from="1539183410885" duration="604000" />
+      <workItem from="1539240639392" duration="204000" />
+      <workItem from="1539241201268" duration="10931000" />
+      <workItem from="1539276245875" duration="60000" />
+      <workItem from="1539292242527" duration="40000" />
+      <workItem from="1539325627602" duration="11545000" />
+      <workItem from="1539357340036" duration="605000" />
+      <workItem from="1539582556071" duration="1994000" />
+      <workItem from="1539584931626" duration="9250000" />
+      <workItem from="1539619384139" duration="480000" />
+      <workItem from="1539669007260" duration="5559000" />
+      <workItem from="1539700842090" duration="601000" />
+      <workItem from="1539713718306" duration="15000" />
+      <workItem from="1539843493479" duration="16640000" />
+      <workItem from="1539878036980" duration="601000" />
+      <workItem from="1539931559776" duration="13655000" />
+      <workItem from="1539963027062" duration="604000" />
+      <workItem from="1540029003445" duration="1894000" />
+      <workItem from="1540189972090" duration="12629000" />
+      <workItem from="1540222913444" duration="603000" />
+      <workItem from="1540283718038" duration="11113000" />
+      <workItem from="1540363031792" duration="9285000" />
+      <workItem from="1540392313059" duration="602000" />
+      <workItem from="1540450208719" duration="11545000" />
+      <workItem from="1540539204785" duration="7499000" />
+      <workItem from="1540567349262" duration="1280000" />
+      <workItem from="1540722149233" duration="602000" />
+      <workItem from="1540795167271" duration="9667000" />
+      <workItem from="1540827515217" duration="604000" />
+      <workItem from="1540842080550" duration="53000" />
+      <workItem from="1540877278162" duration="17921000" />
+      <workItem from="1540910551594" duration="603000" />
+      <workItem from="1540970260356" duration="8884000" />
+      <workItem from="1541054184600" duration="11520000" />
+      <workItem from="1541083911211" duration="602000" />
+      <workItem from="1541091691292" duration="653000" />
+      <workItem from="1541140486117" duration="7717000" />
+      <workItem from="1541323898625" duration="600000" />
+      <workItem from="1541400019144" duration="15467000" />
+      <workItem from="1541430699415" duration="609000" />
+      <workItem from="1541454430199" duration="18000" />
+      <workItem from="1541486257142" duration="9310000" />
+      <workItem from="1541515606598" duration="3073000" />
+      <workItem from="1541573987158" duration="14996000" />
+      <workItem from="1541602421821" duration="1651000" />
+      <workItem from="1541654643702" duration="26677000" />
+      <workItem from="1541690489200" duration="7128000" />
+      <workItem from="1541746413201" duration="8897000" />
+      <workItem from="1541776705472" duration="602000" />
+      <workItem from="1542005788866" duration="6856000" />
+      <workItem from="1542037488439" duration="601000" />
+      <workItem from="1542090906992" duration="13021000" />
+      <workItem from="1542130644876" duration="601000" />
+      <workItem from="1542177672789" duration="16596000" />
+      <workItem from="1542207466803" duration="601000" />
+      <workItem from="1542264448945" duration="13534000" />
+      <workItem from="1542291489392" duration="602000" />
+      <workItem from="1542350519595" duration="6167000" />
+      <workItem from="1542480457721" duration="41000" />
+      <workItem from="1542610765955" duration="12348000" />
+      <workItem from="1542639855851" duration="598000" />
+      <workItem from="1542697216766" duration="8016000" />
+      <workItem from="1542726111341" duration="2387000" />
+      <workItem from="1542795895399" duration="602000" />
+      <workItem from="1542869169206" duration="7595000" />
+      <workItem from="1542897389324" duration="5582000" />
+      <workItem from="1543002333717" duration="265000" />
+      <workItem from="1543215253711" duration="15944000" />
+      <workItem from="1543300521615" duration="2162000" />
+      <workItem from="1543331814236" duration="747000" />
+      <workItem from="1543387813427" duration="12560000" />
+      <workItem from="1543415990545" duration="602000" />
+      <workItem from="1543472053617" duration="6148000" />
+      <workItem from="1543502744268" duration="1343000" />
+      <workItem from="1543560369585" duration="17072000" />
+      <workItem from="1543590968790" duration="603000" />
+      <workItem from="1543820310428" duration="9220000" />
+      <workItem from="1543847760662" duration="603000" />
+      <workItem from="1543906622817" duration="12674000" />
+      <workItem from="1543941802899" duration="602000" />
+      <workItem from="1543991433175" duration="13261000" />
+      <workItem from="1544021681944" duration="1240000" />
+      <workItem from="1544079480082" duration="13072000" />
+      <workItem from="1544165135749" duration="17957000" />
+      <workItem from="1544348797058" duration="601000" />
+      <workItem from="1544424811802" duration="2883000" />
+      <workItem from="1544459690090" duration="1017000" />
+      <workItem from="1544511636857" duration="7416000" />
+      <workItem from="1544597722972" duration="7467000" />
+      <workItem from="1544682414935" duration="16134000" />
+      <workItem from="1544769124013" duration="5444000" />
+      <workItem from="1545029721453" duration="4438000" />
+      <workItem from="1545058396516" duration="602000" />
+      <workItem from="1545115787321" duration="15471000" />
+      <workItem from="1545147334498" duration="602000" />
+      <workItem from="1545201325453" duration="15113000" />
+      <workItem from="1545287740306" duration="11510000" />
+      <workItem from="1545318660483" duration="1244000" />
+      <workItem from="1545375395669" duration="5476000" />
+      <workItem from="1545408624099" duration="602000" />
+      <workItem from="1545548737464" duration="602000" />
+      <workItem from="1545634458618" duration="6316000" />
+      <workItem from="1545736775971" duration="602000" />
+      <workItem from="1546240164809" duration="14843000" />
+      <workItem from="1546268413481" duration="602000" />
+      <workItem from="1546326280141" duration="14609000" />
+      <workItem from="1546412208231" duration="12407000" />
+      <workItem from="1546498460250" duration="16175000" />
+      <workItem from="1546581424946" duration="988000" />
+      <workItem from="1546583380060" duration="8208000" />
+      <workItem from="1546769782785" duration="604000" />
+      <workItem from="1546843739479" duration="11973000" />
+      <workItem from="1546930256545" duration="4165000" />
+      <workItem from="1546942697462" duration="9774000" />
+      <workItem from="1546958912097" duration="658000" />
+      <workItem from="1547017471874" duration="13630000" />
+      <workItem from="1547103202883" duration="9401000" />
+      <workItem from="1547128377358" duration="2313000" />
+      <workItem from="1547188581799" duration="8862000" />
+      <workItem from="1547288567693" duration="606000" />
+      <workItem from="1547373034515" duration="11000" />
+      <workItem from="1547447929919" duration="16033000" />
+      <workItem from="1547480889157" duration="601000" />
+      <workItem from="1547535129999" duration="16071000" />
+      <workItem from="1547622179329" duration="17747000" />
+      <workItem from="1547704747600" duration="18603000" />
+      <workItem from="1548055160073" duration="8757000" />
+      <workItem from="1548138953062" duration="19386000" />
+      <workItem from="1548225474324" duration="15781000" />
+      <workItem from="1548312347173" duration="10724000" />
+      <workItem from="1548343448901" duration="603000" />
+      <workItem from="1548398505464" duration="11580000" />
+      <workItem from="1548496795298" duration="602000" />
+      <workItem from="1548578928627" duration="17000" />
+      <workItem from="1548656304441" duration="14847000" />
+      <workItem from="1548688482397" duration="194000" />
+      <workItem from="1548708350072" duration="482000" />
+      <workItem from="1548743413567" duration="17538000" />
+      <workItem from="1548830463591" duration="12638000" />
+      <workItem from="1548916790111" duration="11755000" />
+      <workItem from="1548949259030" duration="609000" />
+      <workItem from="1549003138811" duration="13622000" />
+      <workItem from="1549196250927" duration="601000" />
+      <workItem from="1549220845431" duration="18000" />
+      <workItem from="1549263079997" duration="15679000" />
+      <workItem from="1549294300301" duration="638000" />
+      <workItem from="1549302902985" duration="3035000" />
+      <workItem from="1549436203448" duration="8762000" />
+      <workItem from="1549522025237" duration="14077000" />
+      <workItem from="1549552864984" duration="601000" />
+      <workItem from="1549607929240" duration="16071000" />
+      <workItem from="1549814810187" duration="2945000" />
+      <workItem from="1549867281082" duration="12491000" />
+      <workItem from="1549954290382" duration="16182000" />
+      <workItem from="1550040524615" duration="8497000" />
+      <workItem from="1550127455118" duration="12340000" />
+      <workItem from="1550210938427" duration="16852000" />
+      <workItem from="1550472267954" duration="9933000" />
+      <workItem from="1550497948735" duration="5192000" />
+      <workItem from="1550559365501" duration="15362000" />
+      <workItem from="1550644507809" duration="16467000" />
+      <workItem from="1550731961963" duration="9431000" />
+      <workItem from="1550817607798" duration="13668000" />
+      <workItem from="1550918346234" duration="599000" />
+      <workItem from="1551076715366" duration="16554000" />
+      <workItem from="1551106201954" duration="604000" />
+      <workItem from="1551163743921" duration="12284000" />
+      <workItem from="1551188181233" duration="5317000" />
+      <workItem from="1551250126524" duration="11232000" />
+      <workItem from="1551278442719" duration="599000" />
+      <workItem from="1551335839388" duration="19800000" />
+      <workItem from="1551423520098" duration="9952000" />
+      <workItem from="1551680175836" duration="17569000" />
+      <workItem from="1551768057278" duration="7017000" />
+      <workItem from="1551854120041" duration="17263000" />
+      <workItem from="1551940517057" duration="16192000" />
+      <workItem from="1552024959232" duration="15289000" />
+      <workItem from="1552211069325" duration="6031000" />
+      <workItem from="1552288125956" duration="13945000" />
+      <workItem from="1552373317322" duration="17673000" />
+      <workItem from="1552459455527" duration="15823000" />
+      <workItem from="1552545676100" duration="18725000" />
+      <workItem from="1552631627985" duration="13189000" />
+      <workItem from="1552894493257" duration="7545000" />
+      <workItem from="1552978381999" duration="5261000" />
+      <workItem from="1552983675882" duration="14103000" />
+      <workItem from="1553009758623" duration="746000" />
+      <workItem from="1553064137346" duration="9010000" />
+      <workItem from="1553150415255" duration="17728000" />
+      <workItem from="1553183705663" duration="603000" />
+      <workItem from="1553237089436" duration="4063000" />
+      <workItem from="1553495546103" duration="77000" />
+      <workItem from="1553496431636" duration="20138000" />
+      <workItem from="1553581187523" duration="34012000" />
+      <workItem from="1553667494507" duration="7202000" />
+      <workItem from="1553681952419" duration="7918000" />
+      <workItem from="1553754418202" duration="14744000" />
+      <workItem from="1553839493625" duration="5811000" />
+      <workItem from="1553846645715" duration="13731000" />
+      <workItem from="1554023907408" duration="437000" />
+      <workItem from="1554066226251" duration="807000" />
+      <workItem from="1554099039277" duration="1900000" />
+      <workItem from="1554111768637" duration="58491000" />
+      <workItem from="1554352017289" duration="56924000" />
+      <workItem from="1554704639634" duration="6054000" />
+      <workItem from="1554711910724" duration="10875000" />
+      <workItem from="1554792574930" duration="23782000" />
+      <workItem from="1554876375119" duration="43103000" />
+      <workItem from="1555012643370" duration="36000" />
+      <workItem from="1555051541776" duration="10471000" />
+      <workItem from="1555309550521" duration="41790000" />
+      <workItem from="1555488160962" duration="53180000" />
+      <workItem from="1555862931365" duration="98876000" />
+      <workItem from="1556480590565" duration="1663000" />
+      <workItem from="1556484022366" duration="21617000" />
+      <workItem from="1556605196598" duration="5579000" />
+      <workItem from="1558941112793" duration="12757000" />
+      <workItem from="1559027100256" duration="33903000" />
+      <workItem from="1560153020884" duration="17671000" />
+      <workItem from="1560208215429" duration="272000" />
+      <workItem from="1560239748984" duration="19941000" />
+      <workItem from="1560280773893" duration="10000" />
+      <workItem from="1560285868839" duration="2000" />
+      <workItem from="1560321392335" duration="19894000" />
+      <workItem from="1560372603095" duration="22566000" />
+      <workItem from="1560468285509" duration="19651000" />
+      <workItem from="1560723800369" duration="6000" />
+      <workItem from="1560754348903" duration="23437000" />
+      <workItem from="1560799534552" duration="563000" />
+      <workItem from="1560800124199" duration="4590000" />
+      <workItem from="1560841617018" duration="11787000" />
+      <workItem from="1560861722721" duration="4889000" />
+      <workItem from="1560928139541" duration="892000" />
+      <workItem from="1561356324991" duration="924000" />
+      <workItem from="1561364566459" duration="1025000" />
+      <workItem from="1561376987327" duration="55000" />
+      <workItem from="1561446985420" duration="2000" />
+      <workItem from="1561531813722" duration="31819000" />
+      <workItem from="1561633912117" duration="12518000" />
+      <workItem from="1561704293492" duration="3929000" />
+      <workItem from="1561718519342" duration="537000" />
+      <workItem from="1561794141479" duration="24079000" />
+      <workItem from="1561963845875" duration="2411000" />
+      <workItem from="1561968563990" duration="296000" />
+      <workItem from="1561968977911" duration="13502000" />
+      <workItem from="1562043120118" duration="37000" />
+      <workItem from="1562043518644" duration="3314000" />
+      <workItem from="1562048806817" duration="4020000" />
+      <workItem from="1562067817432" duration="48000" />
+      <workItem from="1562286151228" duration="2816000" />
+      <workItem from="1562330654461" duration="3137000" />
+      <workItem from="1562333804878" duration="3628000" />
+      <workItem from="1562570871552" duration="21460000" />
+      <workItem from="1562656766510" duration="14118000" />
+      <workItem from="1562702587636" duration="7137000" />
+      <workItem from="1562754585099" duration="31534000" />
+      <workItem from="1562882755890" duration="7395000" />
+      <workItem from="1562918773412" duration="263000" />
+      <workItem from="1562922546375" duration="18051000" />
+      <workItem from="1563177161492" duration="49024000" />
+      <workItem from="1563520567687" duration="12723000" />
+      <workItem from="1563540894509" duration="2806000" />
+      <workItem from="1563543830585" duration="1045000" />
+      <workItem from="1563585187197" duration="134000" />
+      <workItem from="1563590940980" duration="615000" />
+      <workItem from="1563734297038" duration="11059000" />
+      <workItem from="1563777492866" duration="21536000" />
+      <workItem from="1563866107933" duration="9000" />
+      <workItem from="1563866256352" duration="1447000" />
+      <workItem from="1563868417301" duration="22906000" />
+      <workItem from="1563913711515" duration="9215000" />
+      <workItem from="1564127688537" duration="1195000" />
+      <workItem from="1564132094624" duration="12113000" />
+      <workItem from="1564334572431" duration="59352000" />
+      <workItem from="1564557701965" duration="14205000" />
+      <workItem from="1565939462236" duration="13427000" />
+      <workItem from="1566159087321" duration="15980000" />
+      <workItem from="1566282088433" duration="30458000" />
+      <workItem from="1566391959294" duration="51814000" />
+      <workItem from="1566887799514" duration="15981000" />
+      <workItem from="1566907334095" duration="303000" />
+      <workItem from="1566907659691" duration="63000" />
+      <workItem from="1566907744204" duration="1503000" />
+      <workItem from="1566974495351" duration="50904000" />
+      <workItem from="1567148281722" duration="9632000" />
+      <workItem from="1567164651567" duration="9229000" />
+      <workItem from="1567297644108" duration="17845000" />
+      <workItem from="1567491715223" duration="29237000" />
+      <workItem from="1567580751387" duration="38354000" />
+      <workItem from="1567671255937" duration="25504000" />
+      <workItem from="1567715898834" duration="556000" />
+      <workItem from="1567751885332" duration="20741000" />
+      <workItem from="1568014241840" duration="23497000" />
+      <workItem from="1568123489126" duration="117837000" />
+      <workItem from="1568658083812" duration="9504000" />
+      <workItem from="1568702881518" duration="18551000" />
+      <workItem from="1568731783358" duration="264000" />
+      <workItem from="1568747260360" duration="5998000" />
+      <workItem from="1568787774135" duration="20928000" />
+      <workItem from="1568818157348" duration="1470000" />
+      <workItem from="1568876284189" duration="10101000" />
+      <workItem from="1568890276170" duration="19909000" />
+      <workItem from="1568982548757" duration="8801000" />
+      <workItem from="1569212202528" duration="225000" />
+      <workItem from="1569212503251" duration="28458000" />
+      <workItem from="1569300412256" duration="41933000" />
+      <workItem from="1569426878599" duration="4569000" />
+      <workItem from="1569472217879" duration="23650000" />
+      <workItem from="1569559733547" duration="33108000" />
+      <workItem from="1569820803893" duration="18247000" />
+      <workItem from="1569874167771" duration="1201000" />
+      <workItem from="1569880578184" duration="3116000" />
+      <workItem from="1570019025347" duration="28000" />
+      <workItem from="1570019126245" duration="28000" />
+      <workItem from="1570173536999" duration="82694000" />
+    </task>
+    <task id="LOCAL-01589" summary="IS-4021 add static steps to create `CreateAuthenticationProfile`">
+      <created>1569487540148</created>
+      <option name="number" value="01589" />
+      <option name="presentableId" value="LOCAL-01589" />
+      <option name="project" value="LOCAL" />
+      <updated>1569487540148</updated>
+    </task>
+    <task id="LOCAL-01590" summary="IS-4021 add progress bar functionality on `CreateAuthenticationProfileModal` and update `state` of each step to update progress bar">
+      <created>1569487605502</created>
+      <option name="number" value="01590" />
+      <option name="presentableId" value="LOCAL-01590" />
+      <option name="project" value="LOCAL" />
+      <updated>1569487605502</updated>
+    </task>
+    <task id="LOCAL-01591" summary="IS-4021 update button text from `Back` to `Previous` in all profile `wizard` steps and `shared` steps">
+      <created>1569493978164</created>
+      <option name="number" value="01591" />
+      <option name="presentableId" value="LOCAL-01591" />
+      <option name="project" value="LOCAL" />
+      <updated>1569493978164</updated>
+    </task>
+    <task id="LOCAL-01592" summary="IS-4021 change step name from `Ping Federate` to `PingFederate`">
+      <created>1569560147890</created>
+      <option name="number" value="01592" />
+      <option name="presentableId" value="LOCAL-01592" />
+      <option name="project" value="LOCAL" />
+      <updated>1569560147891</updated>
+    </task>
+    <task id="LOCAL-01593" summary="IS-4027 hide `driver` selection dropdown when data source provider type is of `jdbc` to avoid dynamic generation">
+      <created>1569581781508</created>
+      <option name="number" value="01593" />
+      <option name="presentableId" value="LOCAL-01593" />
+      <option name="project" value="LOCAL" />
+      <updated>1569581781511</updated>
+    </task>
+    <task id="LOCAL-01594" summary="IS-4027 add new `DbProvider` enum file for static population of driver">
+      <created>1569682189025</created>
+      <option name="number" value="01594" />
+      <option name="presentableId" value="LOCAL-01594" />
+      <option name="project" value="LOCAL" />
+      <updated>1569682189025</updated>
+    </task>
+    <task id="LOCAL-01595" summary="IS-4027 add new `DbProvider` enum for each db">
+      <created>1569821086801</created>
+      <option name="number" value="01595" />
+      <option name="presentableId" value="LOCAL-01595" />
+      <option name="project" value="LOCAL" />
+      <updated>1569821086801</updated>
+    </task>
+    <task id="LOCAL-01596" summary="IS-4027 add functionality to show dropdown value in beautify mode taking `Input` property of as an object literal">
+      <created>1569821229155</created>
+      <option name="number" value="01596" />
+      <option name="presentableId" value="LOCAL-01596" />
+      <option name="project" value="LOCAL" />
+      <updated>1569821229155</updated>
+    </task>
+    <task id="LOCAL-01597" summary="IS-4027 add functionality to display different label for actual value">
+      <created>1569827603184</created>
+      <option name="number" value="01597" />
+      <option name="presentableId" value="LOCAL-01597" />
+      <option name="project" value="LOCAL" />
+      <updated>1569827603184</updated>
+    </task>
+    <task id="LOCAL-01598" summary="IS-4027 display `driver` element statically">
+      <created>1569827659990</created>
+      <option name="number" value="01598" />
+      <option name="presentableId" value="LOCAL-01598" />
+      <option name="project" value="LOCAL" />
+      <updated>1569827659990</updated>
+    </task>
+    <task id="LOCAL-01599" summary="IS-4027 show small note to download driver from the link place when db provider is `Oracle or MySQL/MariaDB`">
+      <created>1569831308918</created>
+      <option name="number" value="01599" />
+      <option name="presentableId" value="LOCAL-01599" />
+      <option name="project" value="LOCAL" />
+      <updated>1569831308919</updated>
+    </task>
+    <task id="LOCAL-01600" summary="IS-4027 add api call to get `IDSVR_HOME` path and append in small note">
+      <created>1569831379971</created>
+      <option name="number" value="01600" />
+      <option name="presentableId" value="LOCAL-01600" />
+      <option name="project" value="LOCAL" />
+      <updated>1569831379971</updated>
+    </task>
+    <task id="LOCAL-01601" summary="IS-4027 add `Input` to show/hide tooltip info">
+      <created>1569836093026</created>
+      <option name="number" value="01601" />
+      <option name="presentableId" value="LOCAL-01601" />
+      <option name="project" value="LOCAL" />
+      <updated>1569836093037</updated>
+    </task>
+    <task id="LOCAL-01602" summary="IS-4027 add `ngSwitch` to show/hide tooltip info when jdbc provider type is of `Oracle` or `MySQL/MariaDB`">
+      <created>1569837177998</created>
+      <option name="number" value="01602" />
+      <option name="presentableId" value="LOCAL-01602" />
+      <option name="project" value="LOCAL" />
+      <updated>1569837177998</updated>
+    </task>
+    <task id="LOCAL-01603" summary="IS-4027 create enum for jdbc driver type and use enum instead of directly using string to get value to show tooltip for specific jdbc drover type">
+      <created>1569837782980</created>
+      <option name="number" value="01603" />
+      <option name="presentableId" value="LOCAL-01603" />
+      <option name="project" value="LOCAL" />
+      <updated>1569837782980</updated>
+    </task>
+    <task id="LOCAL-01604" summary="IS-4027 persist `jdbc` driver type in localstorage">
+      <created>1569839452707</created>
+      <option name="number" value="01604" />
+      <option name="presentableId" value="LOCAL-01604" />
+      <option name="project" value="LOCAL" />
+      <updated>1569839452708</updated>
+    </task>
+    <task id="LOCAL-01605" summary="IS-4018 issue fix on `setValue` of sms provider selected from basic setup wizard">
+      <created>1570186752302</created>
+      <option name="number" value="01605" />
+      <option name="presentableId" value="LOCAL-01605" />
+      <option name="project" value="LOCAL" />
+      <updated>1570186752303</updated>
+    </task>
+    <task id="LOCAL-01606" summary="IS-4018 set value of selected email provider on system general page from basic setup wizard">
+      <created>1570186867257</created>
+      <option name="number" value="01606" />
+      <option name="presentableId" value="LOCAL-01606" />
+      <option name="project" value="LOCAL" />
+      <updated>1570186867257</updated>
+    </task>
+    <task id="LOCAL-01607" summary="IS-4027 move the driver selected above dynamic elements">
+      <created>1570193785613</created>
+      <option name="number" value="01607" />
+      <option name="presentableId" value="LOCAL-01607" />
+      <option name="project" value="LOCAL" />
+      <updated>1570193785614</updated>
+    </task>
+    <task id="LOCAL-01608" summary="IS-4027 add functionality to add `Username` and `Password` static fields instead of dynamic generated from schema">
+      <created>1570193925880</created>
+      <option name="number" value="01608" />
+      <option name="presentableId" value="LOCAL-01608" />
+      <option name="project" value="LOCAL" />
+      <updated>1570193925880</updated>
+    </task>
+    <task id="LOCAL-01609" summary="IS-4027 add `alert alert-warning` class for `Oracle` and `MySQL/MariaDB` description">
+      <created>1570214514521</created>
+      <option name="number" value="01609" />
+      <option name="presentableId" value="LOCAL-01609" />
+      <option name="project" value="LOCAL" />
+      <updated>1570214514521</updated>
+    </task>
+    <task id="LOCAL-01610" summary="IS-4027 hide dynamic creation of` 'username', 'password', 'use-for-audit' ` elements instead static elements are added with fixed position">
+      <created>1570214648606</created>
+      <option name="number" value="01610" />
+      <option name="presentableId" value="LOCAL-01610" />
+      <option name="project" value="LOCAL" />
+      <updated>1570214648606</updated>
+    </task>
+    <task id="LOCAL-01611" summary="IS-4027 whitespace fixes">
+      <created>1570214891763</created>
+      <option name="number" value="01611" />
+      <option name="presentableId" value="LOCAL-01611" />
+      <option name="project" value="LOCAL" />
+      <updated>1570214891763</updated>
+    </task>
+    <task id="LOCAL-01612" summary="IS-4027 whitespace, double quote to single quote and strict equality fix">
+      <created>1570215030954</created>
+      <option name="number" value="01612" />
+      <option name="presentableId" value="LOCAL-01612" />
+      <option name="project" value="LOCAL" />
+      <updated>1570215030954</updated>
+    </task>
+    <task id="LOCAL-01613" summary="IS-4027 whitespace, double quote to single quote fix">
+      <created>1570217110333</created>
+      <option name="number" value="01613" />
+      <option name="presentableId" value="LOCAL-01613" />
+      <option name="project" value="LOCAL" />
+      <updated>1570217110335</updated>
+    </task>
+    <task id="LOCAL-01614" summary="IS-4027 highlight the selected value in `driver` dropdown while the modal is still open">
+      <created>1570217186664</created>
+      <option name="number" value="01614" />
+      <option name="presentableId" value="LOCAL-01614" />
+      <option name="project" value="LOCAL" />
+      <updated>1570217186664</updated>
+    </task>
+    <task id="LOCAL-01615" summary="IS-4018 remove unnecessary template literals backticks">
+      <created>1570429950351</created>
+      <option name="number" value="01615" />
+      <option name="presentableId" value="LOCAL-01615" />
+      <option name="project" value="LOCAL" />
+      <updated>1570429950351</updated>
+    </task>
+    <task id="LOCAL-01616" summary="IS-4018 change variable name and remove unnecessary template literals backticks">
+      <created>1570430046393</created>
+      <option name="number" value="01616" />
+      <option name="presentableId" value="LOCAL-01616" />
+      <option name="project" value="LOCAL" />
+      <updated>1570430046393</updated>
+    </task>
+    <task id="LOCAL-01617" summary="IS-4018 update error message">
+      <created>1570430334971</created>
+      <option name="number" value="01617" />
+      <option name="presentableId" value="LOCAL-01617" />
+      <option name="project" value="LOCAL" />
+      <updated>1570430334987</updated>
+    </task>
+    <task id="LOCAL-01618" summary="IS-4018 remove extra `element-error`">
+      <created>1570431376510</created>
+      <option name="number" value="01618" />
+      <option name="presentableId" value="LOCAL-01618" />
+      <option name="project" value="LOCAL" />
+      <updated>1570431376511</updated>
+    </task>
+    <task id="LOCAL-01619" summary="IS-4018 update text">
+      <created>1570431399234</created>
+      <option name="number" value="01619" />
+      <option name="presentableId" value="LOCAL-01619" />
+      <option name="project" value="LOCAL" />
+      <updated>1570431399234</updated>
+    </task>
+    <task id="LOCAL-01620" summary="IS-4027 added back removed elements for `emailProviders`, `smsProviders` and `httpCaches`">
+      <created>1570433316032</created>
+      <option name="number" value="01620" />
+      <option name="presentableId" value="LOCAL-01620" />
+      <option name="project" value="LOCAL" />
+      <updated>1570433316033</updated>
+    </task>
+    <task id="LOCAL-01621" summary="IS-4027 change tag from `p` to `div` to show warning info">
+      <created>1570433355927</created>
+      <option name="number" value="01621" />
+      <option name="presentableId" value="LOCAL-01621" />
+      <option name="project" value="LOCAL" />
+      <updated>1570433355927</updated>
+    </task>
+    <task id="LOCAL-01622" summary="IS-4027 fix conditional check">
+      <created>1570433387536</created>
+      <option name="number" value="01622" />
+      <option name="presentableId" value="LOCAL-01622" />
+      <option name="project" value="LOCAL" />
+      <updated>1570433387536</updated>
+    </task>
+    <task id="LOCAL-01623" summary="IS-4027 remove unnecessary quote">
+      <created>1570433420348</created>
+      <option name="number" value="01623" />
+      <option name="presentableId" value="LOCAL-01623" />
+      <option name="project" value="LOCAL" />
+      <updated>1570433420348</updated>
+    </task>
+    <task id="LOCAL-01624" summary="IS-4027 hover fix on driver selection">
+      <created>1570436016941</created>
+      <option name="number" value="01624" />
+      <option name="presentableId" value="LOCAL-01624" />
+      <option name="project" value="LOCAL" />
+      <updated>1570436016941</updated>
+    </task>
+    <task id="LOCAL-01625" summary="IS-4027 clear `hiddenElements` and `hiddenElementsResult`">
+      <created>1570441838341</created>
+      <option name="number" value="01625" />
+      <option name="presentableId" value="LOCAL-01625" />
+      <option name="project" value="LOCAL" />
+      <updated>1570441838343</updated>
+    </task>
+    <task id="LOCAL-01626" summary="IS-4027 remove persistence of selected `jdbc` driver in localstorage">
+      <created>1570442371994</created>
+      <option name="number" value="01626" />
+      <option name="presentableId" value="LOCAL-01626" />
+      <option name="project" value="LOCAL" />
+      <updated>1570442371994</updated>
+    </task>
+    <task id="LOCAL-01627" summary="IS-4056 whitespace fix in protractor.conf file">
+      <created>1570609891137</created>
+      <option name="number" value="01627" />
+      <option name="presentableId" value="LOCAL-01627" />
+      <option name="project" value="LOCAL" />
+      <updated>1570609891140</updated>
+    </task>
+    <task id="LOCAL-01628" summary="IS-4056 add Page Object file to be used application wide">
+      <created>1570616615036</created>
+      <option name="number" value="01628" />
+      <option name="presentableId" value="LOCAL-01628" />
+      <option name="project" value="LOCAL" />
+      <updated>1570616615055</updated>
+    </task>
+    <task id="LOCAL-01629" summary="IS-4056 add new static methods in shared po file">
+      <created>1570621684266</created>
+      <option name="number" value="01629" />
+      <option name="presentableId" value="LOCAL-01629" />
+      <option name="project" value="LOCAL" />
+      <updated>1570621684269</updated>
+    </task>
+    <task id="LOCAL-01630" summary="IS-4056 add new integration test suite `Curity App Login` for curity web app login">
+      <created>1570621792761</created>
+      <option name="number" value="01630" />
+      <option name="presentableId" value="LOCAL-01630" />
+      <option name="project" value="LOCAL" />
+      <updated>1570621792761</updated>
+    </task>
+    <task id="LOCAL-01631" summary="IS-4056 add new integration test suite for app login">
+      <created>1570626559408</created>
+      <option name="number" value="01631" />
+      <option name="presentableId" value="LOCAL-01631" />
+      <option name="project" value="LOCAL" />
+      <updated>1570626559409</updated>
+    </task>
+    <task id="LOCAL-01632" summary="IS-4056 add new integration test suite for deployment page">
+      <created>1570626645209</created>
+      <option name="number" value="01632" />
+      <option name="presentableId" value="LOCAL-01632" />
+      <option name="project" value="LOCAL" />
+      <updated>1570626645209</updated>
+    </task>
+    <task id="LOCAL-01633" summary="IS-4056 add new npm script in package.json file to run `E2E` protractor integration tests">
+      <created>1570626728291</created>
+      <option name="number" value="01633" />
+      <option name="presentableId" value="LOCAL-01633" />
+      <option name="project" value="LOCAL" />
+      <updated>1570626728291</updated>
+    </task>
+    <task id="LOCAL-01634" summary="IS-4056 `getServiceRolesCards` method added page object file instead of directly accessing dom">
+      <created>1570645348697</created>
+      <option name="number" value="01634" />
+      <option name="presentableId" value="LOCAL-01634" />
+      <option name="project" value="LOCAL" />
+      <updated>1570645348699</updated>
+    </task>
+    <task id="LOCAL-01635" summary="IS-4056 `getServiceRolesCards` method added page object file instead of directly accessing dom">
+      <created>1570645530480</created>
+      <option name="number" value="01635" />
+      <option name="presentableId" value="LOCAL-01635" />
+      <option name="project" value="LOCAL" />
+      <updated>1570645530480</updated>
+    </task>
+    <task id="LOCAL-01636" summary="IS-4056 `getServiceRolesCards` method added page object file instead of directly accessing dom">
+      <created>1570646088448</created>
+      <option name="number" value="01636" />
+      <option name="presentableId" value="LOCAL-01636" />
+      <option name="project" value="LOCAL" />
+      <updated>1570646088448</updated>
+    </task>
+    <task id="LOCAL-01637" summary="IS-4056 add new test to check new service role created title should match">
+      <created>1570646379466</created>
+      <option name="number" value="01637" />
+      <option name="presentableId" value="LOCAL-01637" />
+      <option name="project" value="LOCAL" />
+      <updated>1570646379466</updated>
+    </task>
+    <option name="localTasksCounter" value="1638" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.sh" />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ORDER">
+      <list>
+        <option value="0" />
+        <option value="2" />
+        <option value="3" />
+        <option value="1" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="1">
+          <value>
+            <State>
+              <option name="COLUMN_ORDER">
+                <list>
+                  <option value="0" />
+                  <option value="1" />
+                  <option value="2" />
+                  <option value="3" />
+                </list>
+              </option>
+            </State>
+          </value>
+        </entry>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="HIGHLIGHTERS">
+                <map>
+                  <entry key="CURRENT_BRANCH" value="true" />
+                  <entry key="MY_COMMITS" value="true" />
+                </map>
+              </option>
+              <option name="COLUMN_ORDER" />
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feature/IS-3818-selection-of-existing-facilities-in-basic-wizard" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feature/IS-3755-obtain-license-from-dev-portal" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feature/IS-3645-restconf-api-builder" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feature/IS-3794-import-client-in-oauth-tools" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="origin/feature/IS-3228-apply-user-permissions" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feature/IS-3642-change-apperance-of-disabled-clients" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feature/IS-3246-claims-listing-page" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feature/IS-2857-remove-special-characters-directive" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feature/IS-3459-new-basic-setup-wizard" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feature/IS-3482-cluster-configuration" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+        <entry key="User">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="me" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
+    <option name="CHECK_NEW_TODO" value="false" />
+    <MESSAGE value="IS-4027 whitespace fixes" />
+    <MESSAGE value="IS-4027 whitespace, double quote to single quote and strict equality fix" />
+    <MESSAGE value="IS-4027 whitespace, double quote to single quote fix" />
+    <MESSAGE value="IS-4027 highlight the selected value in `driver` dropdown while the modal is still open" />
+    <MESSAGE value="IS-4018 remove unnecessary template literals backticks" />
+    <MESSAGE value="IS-4018 change variable name and remove unnecessary template literals backticks" />
+    <MESSAGE value="IS-4018 update error message" />
+    <MESSAGE value="IS-4018 remove extra `element-error`" />
+    <MESSAGE value="IS-4018 update text" />
+    <MESSAGE value="IS-4027 added back removed elements for `emailProviders`, `smsProviders` and `httpCaches`" />
+    <MESSAGE value="IS-4027 change tag from `p` to `div` to show warning info" />
+    <MESSAGE value="IS-4027 fix conditional check" />
+    <MESSAGE value="IS-4027 remove unnecessary quote" />
+    <MESSAGE value="IS-4027 hover fix on driver selection" />
+    <MESSAGE value="IS-4027 clear `hiddenElements` and `hiddenElementsResult`" />
+    <MESSAGE value="IS-4027 remove persistence of selected `jdbc` driver in localstorage" />
+    <MESSAGE value="IS-4056 whitespace fix in protractor.conf file" />
+    <MESSAGE value="IS-4056 add Page Object file to be used application wide" />
+    <MESSAGE value="IS-4056 add new static methods in shared po file" />
+    <MESSAGE value="IS-4056 add new integration test suite `Curity App Login` for curity web app login" />
+    <MESSAGE value="IS-4056 add new integration test suite for app login" />
+    <MESSAGE value="IS-4056 add new integration test suite for deployment page" />
+    <MESSAGE value="IS-4056 add new npm script in package.json file to run `E2E` protractor integration tests" />
+    <MESSAGE value="IS-4056 `getServiceRolesCards` method added page object file instead of directly accessing dom" />
+    <MESSAGE value="IS-4056 add new test to check new service role created title should match" />
+    <option name="LAST_COMMIT_MESSAGE" value="IS-4056 add new test to check new service role created title should match" />
+    <option name="PRESELECT_EXISTING_CHANGELIST" value="true" />
+    <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/../../curity-learning/curity-web-ui/src/app/oauth/components/scopes/scopes.component.html</url>
+          <line>17</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ScopeChooserConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+    </states>
+  </component>
+</project>

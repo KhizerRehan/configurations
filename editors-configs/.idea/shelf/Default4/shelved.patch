@@ -1,0 +1,75 @@
+Index: src/app/oauth/components/side-menu/side-menu.component.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><aside class=\"dashboard-sidebar\" [ngClass]=\"{'dashboard-sidebar-collapsed': isSidebarCollapsed}\" role=\"contentinfo\">\n\n  <ul class=\"list-reset mb0\">\n    <li [routerLinkActive]=\"['active']\" [routerLinkActiveOptions]=\"{exact: true}\">\n      <a [routerLink]=\"['/profile/oauth']\"   aria-label=\"General\">\n        <i class=\"icon ion-android-star inlineicon\"></i> General\n        <span>General</span>\n      </a>\n    </li>\n    <li [routerLinkActive]=\"['active']\">\n      <a [routerLink]=\"['/profile/oauth/clients']\"  aria-label=\"Clients\">\n        <i class=\"icon ion-cube inlineicon\"></i> Clients\n        <span>Clients</span>\n      </a>\n    </li>\n    <li [routerLinkActive]=\"['active']\">\n      <a [routerLink]=\"['/profile/oauth/scopes']\"  aria-label=\"Scopes\">\n        <i class=\"icon ion-pinpoint inlineicon\"></i> Scopes\n        <span>Scopes</span>\n      </a>\n    </li>\n\n    <li [routerLinkActive]=\"['active']\">\n      <a [routerLink]=\"['/profile/oauth/endpoints']\"  aria-label=\"Endpoints\">\n        <i class=\"icon ion-android-share-alt inlineicon\"></i> Endpoints\n        <span>Endpoints</span>\n      </a>\n    </li>\n\n    <li [routerLinkActive]=\"['active']\">\n      <a [routerLink]=\"['/profile/oauth/token-issuers']\"  aria-label=\"Token Issuers\">\n        <i class=\"icon ion-pricetag inlineicon\"></i> Token Issuers\n        <span>Token Issuers</span>\n      </a>\n    </li>\n\n    <li class=\"sidebar-collapse-toggle\">\n      <a (click)=\"toggleSidebar()\" >\n        <i class=\"icon ion-chevron-right\"></i>\n        <i class=\"icon ion-chevron-right\"></i>\n      </a>\n    </li>\n  </ul>\n\n</aside>\n\n<section class=\"dashboard-main\" [ngClass]=\"dynamicClasses\" [class.dashboard-main-sidebar-collapsed]=\"isSidebarCollapsed\" role=\"main\">\n  <router-outlet></router-outlet>\n</section>\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/oauth/components/side-menu/side-menu.component.html	(date 1539861787000)
++++ src/app/oauth/components/side-menu/side-menu.component.html	(date 1539861081000)
+@@ -2,33 +2,33 @@
+ 
+   <ul class="list-reset mb0">
+     <li [routerLinkActive]="['active']" [routerLinkActiveOptions]="{exact: true}">
+-      <a [routerLink]="['/profile/oauth']"   aria-label="General">
++      <a [routerLink]="['/profile/oauth', profileId]"   aria-label="General">
+         <i class="icon ion-android-star inlineicon"></i> General
+         <span>General</span>
+       </a>
+     </li>
+     <li [routerLinkActive]="['active']">
+-      <a [routerLink]="['/profile/oauth/clients']"  aria-label="Clients">
++      <a [routerLink]="['/profile/oauth', profileId, 'clients']"  aria-label="Clients">
+         <i class="icon ion-cube inlineicon"></i> Clients
+         <span>Clients</span>
+       </a>
+     </li>
+     <li [routerLinkActive]="['active']">
+-      <a [routerLink]="['/profile/oauth/scopes']"  aria-label="Scopes">
++      <a [routerLink]="['/profile/oauth', profileId, 'scopes']"  aria-label="Scopes">
+         <i class="icon ion-pinpoint inlineicon"></i> Scopes
+         <span>Scopes</span>
+       </a>
+     </li>
+ 
+     <li [routerLinkActive]="['active']">
+-      <a [routerLink]="['/profile/oauth/endpoints']"  aria-label="Endpoints">
++      <a [routerLink]="['/profile/oauth', profileId, 'endpoints']"  aria-label="Endpoints">
+         <i class="icon ion-android-share-alt inlineicon"></i> Endpoints
+         <span>Endpoints</span>
+       </a>
+     </li>
+ 
+     <li [routerLinkActive]="['active']">
+-      <a [routerLink]="['/profile/oauth/token-issuers']"  aria-label="Token Issuers">
++      <a [routerLink]="['/profile/oauth', profileId, 'token-issuers']"  aria-label="Token Issuers">
+         <i class="icon ion-pricetag inlineicon"></i> Token Issuers
+         <span>Token Issuers</span>
+       </a>
+Index: src/app/oauth/components/side-menu/side-menu.component.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { Component, ElementRef, OnDestroy, OnInit } from '@angular/core';\nimport { ActivatedRoute, NavigationEnd, Router } from '@angular/router';\nimport { Subscription } from 'rxjs/Subscription';\nimport { SharedDataService } from '../../../core/services/shared-data.service';\n\n@Component({\n  moduleId: module.id,\n  selector: 'oauth-side-menu',\n  templateUrl: 'side-menu.component.html'\n})\nexport class OauthSideMenuComponent implements OnInit, OnDestroy {\n\n  isSidebarCollapsed: boolean;\n  dynamicClasses: Array<string> = [];\n  private routerSubscription: Subscription;\n\n  constructor(private elementRef: ElementRef,\n              private sharedService: SharedDataService,\n              private router: Router,\n              private activatedRoute: ActivatedRoute) {\n    this.routerSubscription = this.router.events\n      .filter((event) => event instanceof NavigationEnd)\n      .map(() => this.activatedRoute)\n      .map((route) => {\n        while (route.firstChild) {\n          route = route.firstChild;\n        }\n        return route;\n      })\n      .filter((route) => route.outlet === 'primary')\n      .mergeMap((route) => route.data)\n      .subscribe((event) => {\n        this.dynamicClasses = event['classes'] || [];\n      });\n  }\n\n  ngOnInit() {\n    this.elementRef.nativeElement.offsetParent.offsetParent.className = 'perspective-oauth';\n    this.isSidebarCollapsed = this.sharedService.getSelectedParam('isSidebarCollapsed') || false;\n  }\n\n  ngOnDestroy() {\n    if (this.routerSubscription) {\n      this.routerSubscription.unsubscribe();\n    }\n  }\n\n  get profileName() {\n    return this.sharedService.getProfile().id;\n  }\n\n  toggleSidebar() {\n    this.isSidebarCollapsed = !this.isSidebarCollapsed;\n    this.sharedService.setSelectedParam('isSidebarCollapsed', this.isSidebarCollapsed);\n  }\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/oauth/components/side-menu/side-menu.component.ts	(date 1539861787000)
++++ src/app/oauth/components/side-menu/side-menu.component.ts	(date 1539861016000)
+@@ -10,6 +10,7 @@
+ })
+ export class OauthSideMenuComponent implements OnInit, OnDestroy {
+ 
++  profileId: string;
+   isSidebarCollapsed: boolean;
+   dynamicClasses: Array<string> = [];
+   private routerSubscription: Subscription;
+@@ -35,6 +36,9 @@
+   }
+ 
+   ngOnInit() {
++    this.activatedRoute.params.subscribe(params => {
++      this.profileId = params['profileId'];
++    });
+     this.elementRef.nativeElement.offsetParent.offsetParent.className = 'perspective-oauth';
+     this.isSidebarCollapsed = this.sharedService.getSelectedParam('isSidebarCollapsed') || false;
+   }

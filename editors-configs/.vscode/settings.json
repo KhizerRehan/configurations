@@ -1,0 +1,8 @@
+{
+    "files.autoSaveDelay": 10000,
+    "prettier.useTabs": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "window.zoomLevel": -1
+}
+  

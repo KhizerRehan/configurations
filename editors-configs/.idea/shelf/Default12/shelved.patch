@@ -1,0 +1,424 @@
+Index: src/app/oauth/components/claims-select/claims-select.component.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { Component, OnDestroy, OnInit } from '@angular/core';\nimport { Subject } from 'rxjs/Subject';\n\n@Component({\n  selector: 'app-claims-select',\n  templateUrl: './claims-select.component.html'\n})\nexport class ClaimsSelectComponent implements OnInit, OnDestroy {\n  readonly destroyed$ = new Subject();\n\n  constructor() {\n  }\n\n  ngOnInit() {\n  }\n\n  ngOnDestroy(): void {\n    this.destroyed$.next(true);\n    this.destroyed$.complete();\n  }\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/oauth/components/claims-select/claims-select.component.ts	(date 1547116149000)
++++ src/app/oauth/components/claims-select/claims-select.component.ts	(date 1547116258000)
+@@ -1,22 +1,409 @@
+-import { Component, OnDestroy, OnInit } from '@angular/core';
++import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, ViewChild } from '@angular/core';
++import { Observable } from 'rxjs/Observable';
+ import { Subject } from 'rxjs/Subject';
++import { BatchOperationsService } from '../../../core/services/batch-operations.service';
++import { ConfigService } from '../../../core/services/config.service';
++import { ElementHandlerService } from '../../../core/services/element-handler.service';
++import { EndpointsService } from '../../../core/services/endpoints';
++import { HttpApiService } from '../../../core/services/http-api.service';
++import { ModalService } from '../../../core/services/modal.service';
++import { NavigationType } from '../../../core/services/navigation-type.enum';
++import { NavigationService } from '../../../core/services/navigation.service';
++import { RequestMode } from '../../../core/services/request-mode.enum';
++import { RequestBuilder } from '../../../core/services/request.builder';
++import { ResponseCode } from '../../../core/services/ResponseCode';
++import { SharedDataService } from '../../../core/services/shared-data.service';
++import { TransactionService } from '../../../core/services/transaction.service';
+ 
+ @Component({
+   selector: 'app-claims-select',
+   templateUrl: './claims-select.component.html'
+ })
+-export class ClaimsSelectComponent implements OnInit, OnDestroy {
++export class ClaimsSelectComponent implements OnChanges, OnDestroy {
+   readonly destroyed$ = new Subject();
+ 
+-  constructor() {
++  @Input() data: any;
++  @Input() filterItems: Array<any> = [];
++  @Input() isValueProvided: boolean;
++  @Input() clearValueOnDestroy: boolean;
++  @Input() canUpdate: boolean = true;
++  @Input() canDelete: boolean = true;
++  @Input() allowClear: boolean = true;
++
++  @Output() valueChanged = new EventEmitter();
++  @Output() error = new EventEmitter();
++
++  @ViewChild('input') private inputField;
++
++  authenticators: any = {};
++  filteredAuthenticators: Array<string> = [];
++  errorMessage: any;
++  isMultiSelect: boolean;
++  isModalHidden: boolean = true;
++  searchValue: string;
++
++  private isElementBusyIncremented: boolean;
++
++  constructor(private Transaction: TransactionService,
++              private Api: HttpApiService,
++              private endpoints: EndpointsService,
++              private sharedData: SharedDataService,
++              private elementHandler: ElementHandlerService,
++              private configService: ConfigService,
++              private batchService: BatchOperationsService,
++              private modalService: ModalService,
++              private navigationService: NavigationService) {
+   }
+ 
+-  ngOnInit() {
++  ngOnChanges(changes: any): any {
++    if (changes.data && changes.data.currentValue) {
++      this.data = changes.data.currentValue;
++      this.isMultiSelect = this.data.kind === 'leaf-list';
++      if (this.isValueProvided) {
++        this.getValueCompleted();
++      }
++      else {
++        if (!this.isElementBusyIncremented) {
++          this.sharedData.incrementElementsBusyCounter();
++          this.isElementBusyIncremented = true;
++        }
++        this.Transaction.getReadTransaction().then(transactionId => {
++          this.sharedData.getValue(this.data.path, this.Api, transactionId, this.data, this, 'getValueCompleted');
++        });
++      }
++      if (this.data.leafrefTarget) {
++        this.loadItemsFromLeafRef();
++      }
++      else if (this.data.xpath_expr) {
++        this.loadItemsFromXPath();
++      }
++      this.elementHandler.focusOnElement(this.data, this.inputField);
++    }
++    if (changes.filterItems && changes.filterItems.currentValue) {
++      this.filterItems = changes.filterItems.currentValue;
++      if (this.filterItems.length > 0) {
++        this.filterItems.forEach(item => {
++          delete this.authenticators[item];
++          const index = this.filteredAuthenticators.indexOf(item);
++          if (index > -1) {
++            this.filteredAuthenticators.splice(index, 1);
++          }
++        });
++      }
++    }
+   }
+ 
+-  ngOnDestroy(): void {
++  ngOnDestroy() {
++    if (this.isElementBusyIncremented) {
++      this.sharedData.decrementElementsBusyCounter();
++      this.isElementBusyIncremented = false;
++    }
++    if (this.clearValueOnDestroy) {
++      this.data.value = this.isMultiSelect ? [] : null;
++    }
+     this.destroyed$.next(true);
+     this.destroyed$.complete();
+   }
+ 
++  getValueCompleted() {
++    if (this.data.error) {
++      this.error.emit({requestMode: RequestMode.READ, error: this.data.error, path: this.data.path});
++    }
++    if (this.data.value && this.data.presenceContainer) {
++      this.data.isPresenceContainerCreated = true;
++    }
++    this.data.value = this.data.value || this.data.default || null;
++    if (!this.data.value && this.isMultiSelect) {
++      this.data.value = [];
++    }
++    if (this.isElementBusyIncremented) {
++      this.sharedData.decrementElementsBusyCounter();
++      this.isElementBusyIncremented = false;
++    }
++  }
++
++  openAuthenticatorModal() {
++    this.errorMessage = null;
++    if (this.isMultiSelect) {
++      Object.keys(this.authenticators).forEach(key => {
++        this.authenticators[key].isSelected = false;
++      });
++      this.data.value.forEach(value => {
++        this.authenticators[value].isSelected = true;
++      });
++    }
++    this.searchValue = '';
++    this.filteredAuthenticators = Object.keys(this.authenticators);
++    this.isModalHidden = false;
++    this.modalService.addOpenedModal('AuthenticatorSelectModal', this, 'closeAuthenticatorModal');
++    SharedDataService.lockScroll();
++  }
++
++  closeAuthenticatorModal() {
++    this.errorMessage = null;
++    this.isModalHidden = true;
++    this.modalService.removeOpenedModal('AuthenticatorSelectModal');
++    SharedDataService.unlockScroll();
++  }
++
++  onSearchValueChanged() {
++    if (this.searchValue) {
++      this.filteredAuthenticators = Object.keys(this.authenticators).filter(authenticatorId => {
++        return authenticatorId.toLowerCase().indexOf(this.searchValue) > -1;
++      });
++    }
++    else {
++      this.filteredAuthenticators = Object.keys(this.authenticators);
++    }
++  }
++
++  updateAllAuthenticators(property: string, value: any) {
++    this.filteredAuthenticators.forEach(key => {
++      this.authenticators[key][property] = value;
++    });
++  }
++
++  selected(value: string): void {
++    if (this.isMultiSelect) {
++      this.authenticators[value].isSelected = !this.authenticators[value].isSelected;
++    }
++    else if (this.data.value !== value) {
++      this.data.value = value;
++      this.data.hasError = false;
++      if (this.canUpdate) {
++        this.updateData();
++      }
++      else {
++        setTimeout(() => {
++          this.valueChanged.emit({value: this.data.value, element: this.data.name, error: false, path: this.data.path});
++        }, 100);
++      }
++    }
++  }
++
++  onSubmit() {
++    this.errorMessage = null;
++    this.data.hasError = false;
++    const newValue = Object.keys(this.authenticators).filter(key => this.authenticators[key].isSelected);
++    if (newValue !== this.data.value) {
++      this.data.value = newValue;
++      if (this.canUpdate) {
++        if (this.data.value.length === 0) {
++          this.deletePath();
++        }
++        else {
++          this.updateData();
++        }
++      }
++      else {
++        this.valueChanged.emit({value: this.data.value, element: this.data.name, error: false, path: this.data.path});
++      }
++    }
++  }
++
++  deleteItem(value: string) {
++    this.data.hasError = false;
++    this.errorMessage = null;
++    if (this.canUpdate) {
++      this.Transaction.getWriteTransaction()
++        .then(transaction => {
++          this.Api.postRequest(RequestBuilder.withDeleteValue(value, this.data.path, transaction))
++            .takeUntil(this.destroyed$)
++            .subscribe(response => {
++                if (response.code !== ResponseCode.OK) {
++                  this.errorMessage = response;
++                  this.error.emit({requestMode: RequestMode.WRITE, error: response, path: this.data.path});
++                }
++                else {
++                  this.data.value.splice(this.data.value.indexOf(value), 1);
++                  this.sharedData.incrementChangeCount(this.data.path);
++                  this.valueChanged.emit({value: this.data.value, element: this.data.name, error: false, path: this.data.path});
++                }
++              },
++              error => console.log(error));
++        })
++        .catch(error => {
++        });
++    }
++    else {
++      this.data.value.splice(this.data.value.indexOf(value), 1);
++      this.valueChanged.emit({value: this.data.value, element: this.data.name, error: false, path: this.data.path});
++    }
++  }
++
++  updateData() {
++    this.data.hasError = false;
++    this.errorMessage = null;
++    if (this.data.presenceContainer && !this.data.isPresenceContainerCreated) {
++      this.createPath(this.data.containerPath)
++        .takeUntil(this.destroyed$)
++        .subscribe(response => {
++            if (!response.hasError) {
++              this.data.isPresenceContainerCreated = true;
++              this.setValue();
++            }
++          },
++          error => console.log(error));
++    }
++    else {
++      this.setValue();
++    }
++  }
++
++  deletePath() {
++    if (!this.canUpdate || !this.canDelete) {
++      // return previous selected value as well
++      this.valueChanged.emit({value: this.data.value, isDeleted: true, error: false, path: this.data.path});
++      this.data.value = this.isMultiSelect ? [] : null;
++      return;
++    }
++    this.Transaction.getWriteTransaction()
++      .then(transaction => {
++        const path = this.data.presenceContainer ? this.data.containerPath : this.data.path;
++        this.Api.postRequest(RequestBuilder.withDelete(path, transaction))
++          .takeUntil(this.destroyed$)
++          .subscribe(response => {
++              if (response.code !== ResponseCode.OK) {
++                this.errorMessage = response;
++                this.error.emit({requestMode: RequestMode.WRITE, error: response, path: this.data.path});
++              }
++              else {
++                this.sharedData.incrementChangeCount(path);
++                this.data.value = this.isMultiSelect ? [] : null;
++                this.valueChanged.emit({isDeleted: true, error: false, path: this.data.path});
++                if (this.data.presenceContainer) {
++                  this.data.isPresenceContainerCreated = false;
++                }
++                this.closeAuthenticatorModal();
++              }
++            },
++            error => console.log(error));
++      })
++      .catch(error => {
++      });
++  }
++
++  onNavigate(authenticatorId: string) {
++    const path = `${this.data.leafrefTarget.replace(new RegExp('auth:', 'g'), '')}{${authenticatorId}}`;
++    this.navigationService.navigateToUrl({url: path}, NavigationType.CHANGE);
++  }
++
++  private createPath(path: string): Observable<any> {
++    return Observable.create(observer => {
++      this.Transaction.getWriteTransaction()
++        .then(transactionId => {
++          return this.Api.postRequest(RequestBuilder.withCreate(path, transactionId))
++            .takeUntil(this.destroyed$)
++            .finally(() => observer.complete())
++            .subscribe(response => {
++                if (response.code === ResponseCode.OK) {
++                  this.sharedData.incrementChangeCount(path);
++                  observer.next({hasError: false, response});
++                }
++                else {
++                  this.errorMessage = response;
++                  this.error.emit({requestMode: RequestMode.WRITE, error: response, path: path});
++                  observer.next({hasError: true, response});
++                }
++              },
++              error => observer.error(error));
++        })
++        .catch(error => {
++        });
++    });
++  }
++
++  private setValue() {
++    this.Transaction.getWriteTransaction()
++      .then(transactionId => {
++        this.Api.postRequest(RequestBuilder.withSetValue(this.data.value, this.data.path, transactionId))
++          .takeUntil(this.destroyed$)
++          .subscribe(response => {
++            if (response.code !== ResponseCode.OK) {
++              this.errorMessage = response;
++              this.valueChanged.emit({value: this.data.value, element: this.data.name, error: true, path: this.data.path});
++              this.error.emit({requestMode: RequestMode.WRITE, error: response, path: this.data.path});
++            }
++            else {
++              this.sharedData.incrementChangeCount(this.data.path);
++              this.valueChanged.emit({value: this.data.value, element: this.data.name, error: false, path: this.data.path});
++              this.closeAuthenticatorModal();
++            }
++          });
++      })
++      .catch(error => {
++      });
++  }
++
++  private loadItemsFromXPath() {
++    this.Transaction.getReadTransaction()
++      .then(transaction => {
++        this.Api.postRequest(RequestBuilder.withQuery(this.data.xpath_expr, transaction))
++          .takeUntil(this.destroyed$)
++          .subscribe(response => {
++              this.handleResponse(response);
++            },
++            error => console.log(error));
++      });
++  }
++
++  private loadItemsFromLeafRef() {
++    this.data.leafrefTarget = this.data.leafrefTarget.replace(new RegExp('base:', 'g'), '');
++    this.data.leafrefTarget = this.data.leafrefTarget.replace('/id', '');
++
++    this.Transaction.getReadTransaction()
++      .then(transaction => {
++        this.Api.postRequest(RequestBuilder.withGetListKeys(this.data.leafrefTarget, transaction))
++          .takeUntil(this.destroyed$)
++          .subscribe(response => {
++              this.handleResponse(response);
++            },
++            error => console.log(error));
++      });
++  }
++
++  private handleResponse(response: any) {
++    if (response.code !== ResponseCode.OK) {
++      this.error.emit({requestMode: RequestMode.READ, error: response, path: response.request.path});
++    }
++    else {
++      this.authenticators = {};
++      const keys = response.data.keys || response.data.results;
++      if (keys) {
++        this.configService.getAuthIconsConfig()
++          .takeUntil(this.destroyed$)
++          .subscribe(config => {
++            this.Transaction.getReadTransaction()
++              .then(transactionId => {
++                const batchId = this.batchService.createBatch();
++                keys.forEach(value => {
++                  const authenticator: any = {};
++                  if (value.id && value.id.value && this.filterItems.indexOf(value.id.value) < 0) {
++                    authenticator.id = value.id.value;
++                  }
++                  else if (value.id && this.filterItems.indexOf(value.id) < 0) {
++                    authenticator.id = value.id;
++                  }
++                  if (authenticator.id) {
++                    this.batchService.addToBatch(batchId, RequestBuilder.withSelectedCase(
++                      `${this.endpoints.getAuthListUrl()}{${authenticator.id}}`, 'authenticator-type', transactionId))
++                      .takeUntil(this.destroyed$)
++                      .subscribe(response1 => {
++                          if (response1.code === ResponseCode.OK) {
++                            authenticator.type = response1.data.value;
++                            const type = authenticator.type.indexOf(':') > -1 ? authenticator.type.split(':')[1] : authenticator.type;
++                            const icon = config.find(item => item.name === type);
++                            authenticator.icon = icon ? icon.icon : 'ion-cube';
++                            this.authenticators[authenticator.id] = authenticator;
++                          }
++                        },
++                        error => console.log(error));
++                  }
++                });
++                this.batchService.initiateRequest(batchId);
++              });
++          });
++      }
++    }
++  }
+ }

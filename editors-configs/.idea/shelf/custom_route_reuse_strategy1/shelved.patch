@@ -1,0 +1,101 @@
+Index: src/app/app.module.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { HashLocationStrategy, LocationStrategy } from '@angular/common';\nimport { HttpClientModule } from '@angular/common/http';\nimport { NgModule } from '@angular/core';\nimport { HttpModule } from '@angular/http';\nimport { BrowserModule } from '@angular/platform-browser';\nimport { BrowserAnimationsModule } from '@angular/platform-browser/animations';\nimport { PreloadAllModules, RouterModule } from '@angular/router';\nimport { NotificationsService, SimpleNotificationsModule } from 'angular2-notifications';\nimport { DragulaService } from 'ng2-dragula/ng2-dragula';\nimport { rootRouterConfig } from './app.routes';\nimport { CoreModule } from './core/core.module';\nimport { MainComponent } from './main.component';\nimport { SharedModule } from './shared/shared.module';\nimport { SystemModule } from './system/system.module';\n\n@NgModule({\n  imports: [\n    BrowserModule,\n    HttpModule,\n    HttpClientModule,\n    BrowserAnimationsModule,\n    SimpleNotificationsModule.forRoot({\n      timeOut: 5000,\n      showProgressBar: false,\n      maxStack: 1\n    }),\n    RouterModule.forRoot(rootRouterConfig, {preloadingStrategy: PreloadAllModules}),\n    CoreModule,\n    SharedModule,\n    SystemModule\n ],\n  declarations: [MainComponent],\n  providers: [\n    {provide: LocationStrategy, useClass: HashLocationStrategy},\n    DragulaService,\n    NotificationsService,\n  ],\n  bootstrap: [MainComponent]\n})\nexport class AppModule {\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/app.module.ts	(date 1552031243000)
++++ src/app/app.module.ts	(date 1552399968000)
+@@ -4,11 +4,12 @@
+ import { HttpModule } from '@angular/http';
+ import { BrowserModule } from '@angular/platform-browser';
+ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+-import { PreloadAllModules, RouterModule } from '@angular/router';
++import { PreloadAllModules, RouteReuseStrategy, RouterModule } from '@angular/router';
+ import { NotificationsService, SimpleNotificationsModule } from 'angular2-notifications';
+ import { DragulaService } from 'ng2-dragula/ng2-dragula';
+ import { rootRouterConfig } from './app.routes';
+ import { CoreModule } from './core/core.module';
++import { CustomRouteReuseStrategy } from './core/services/custom-route-reuse-strategy.service';
+ import { MainComponent } from './main.component';
+ import { SharedModule } from './shared/shared.module';
+ import { SystemModule } from './system/system.module';
+@@ -34,6 +35,10 @@
+     {provide: LocationStrategy, useClass: HashLocationStrategy},
+     DragulaService,
+     NotificationsService,
++    {
++      provide: RouteReuseStrategy,
++      useClass: CustomRouteReuseStrategy
++    }
+   ],
+   bootstrap: [MainComponent]
+ })
+Index: src/app/core/core.module.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { NgModule } from '@angular/core';\nimport { BatchOperationsService } from './services/batch-operations.service';\nimport { ConfigService } from './services/config.service';\nimport { DataResolverService } from './services/data-resolver.service';\nimport { ElementHandlerService } from './services/element-handler.service';\nimport { EndpointsService } from './services/endpoints';\nimport { FacilitiesService } from './services/facilities.service';\nimport { HttpApiService } from './services/http-api.service';\nimport { ModalService } from './services/modal.service';\nimport { NavigationService } from './services/navigation.service';\nimport { SharedDataService } from './services/shared-data.service';\nimport { TransactionService } from './services/transaction.service';\nimport { TypeResolverService } from './services/type-resolver.service';\nimport { UserService } from './services/user.service';\n\n@NgModule({\n  providers: [\n    SharedDataService,\n    TransactionService,\n    DataResolverService,\n    TypeResolverService,\n    NavigationService,\n    UserService,\n    HttpApiService,\n    FacilitiesService,\n    EndpointsService,\n    ConfigService,\n    ElementHandlerService,\n    ModalService,\n    BatchOperationsService\n  ]\n})\nexport class CoreModule {\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/core/core.module.ts	(date 1552031243000)
++++ src/app/core/core.module.ts	(date 1552399968000)
+@@ -1,6 +1,8 @@
+ import { NgModule } from '@angular/core';
++import { RouteReuseStrategy } from '@angular/router';
+ import { BatchOperationsService } from './services/batch-operations.service';
+ import { ConfigService } from './services/config.service';
++import { CustomRouteReuseStrategy } from './services/custom-route-reuse-strategy.service';
+ import { DataResolverService } from './services/data-resolver.service';
+ import { ElementHandlerService } from './services/element-handler.service';
+ import { EndpointsService } from './services/endpoints';
+Index: src/app/core/services/custom-route-reuse-strategy.service.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/app/core/services/custom-route-reuse-strategy.service.ts	(date 1552399968000)
++++ src/app/core/services/custom-route-reuse-strategy.service.ts	(date 1552399968000)
+@@ -0,0 +1,41 @@
++import { ActivatedRouteSnapshot, DetachedRouteHandle, RouteReuseStrategy } from '@angular/router';
++
++export class CustomRouteReuseStrategy extends RouteReuseStrategy {
++  shouldDetach(route: ActivatedRouteSnapshot): boolean {
++    return false;
++  }
++
++  store(route: ActivatedRouteSnapshot, detachedTree: DetachedRouteHandle): void {
++  }
++
++  shouldAttach(route: ActivatedRouteSnapshot): boolean {
++    return false;
++  }
++
++  retrieve(route: ActivatedRouteSnapshot): DetachedRouteHandle {
++    return null;
++  }
++
++  shouldReuseRoute(future: ActivatedRouteSnapshot, curr: ActivatedRouteSnapshot): boolean {
++    if (curr.routeConfig === null && future.routeConfig === null) {
++      return true;
++    }
++
++    // never reuse routes with incompatible configurations
++    if (future.routeConfig !== curr.routeConfig) {
++      return false;
++    }
++
++    // handle special routes separately that should not be reused
++    if (future.routeConfig.path === 'some/path') {
++      return false;
++    }
++    else if (future.routeConfig.path === 'other/:id') {
++      return false;
++    }
++
++    // per default, reuse routes with the same configuration that we didn’t handle before
++    // (this is the default behavior)
++    return true;
++  }
++}
